@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    background: {{ sub_color }};
+  }
+
+  .background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.05) 0%,
+      {{ sub_color }} 100%
+    );
+    z-index: 1;
+  }
+
+  .content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 80px;
+    z-index: 2;
+  }
+
+  .category-tag {
+    display: inline-block;
+    font-size: 22px;
+    font-weight: 700;
+    color: {{ main_color }};
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid {{ main_color }};
+  }
+
+  .heading {
+    font-size: 48px;
+    font-weight: 900;
+    color: #1A1A1A;
+    line-height: 1.35;
+    margin-bottom: 28px;
+    word-break: keep-all;
+  }
+
+  .body {
+    font-size: 30px;
+    font-weight: 400;
+    color: #4A4A4A;
+    line-height: 1.7;
+    word-break: keep-all;
+  }
+
+  .slide-number {
+    position: absolute;
+    top: 60px;
+    right: 80px;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <img class="background-image" src="{{ image_path }}" alt="content background">
+    <div class="image-overlay"></div>
+    <span class="slide-number">{{ slide_number }} / {{ total_slides }}</span>
+    <div class="content">
+      <span class="category-tag">{{ category_tag }}</span>
+      <h2 class="heading">{{ heading }}</h2>
+      <p class="body">{{ body }}</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# 영문 소스 (글로벌 트렌드)
+https://techcrunch.com/category/artificial-intelligence/feed/
+https://venturebeat.com/category/ai/feed/
+https://the-decoder.com/feed/
+https://www.artificialintelligence-news.com/feed/
+https://simonwillison.net/atom/everything/
+https://www.producthunt.com/feed
+
+# 한국어 소스
+https://news.hada.io/rss/news
+https://www.aitimes.com/rss/allArticle.xml
+https://yozm.wishket.com/magazine/feed/

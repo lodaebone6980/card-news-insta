@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    background: {{ main_color }};
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 100px;
+  }
+
+  .decoration-line {
+    width: 60px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    margin-bottom: 48px;
+    border-radius: 2px;
+  }
+
+  .heading {
+    font-size: 52px;
+    font-weight: 900;
+    color: #FFFFFF;
+    line-height: 1.4;
+    margin-bottom: 40px;
+    word-break: keep-all;
+  }
+
+  .divider {
+    width: 120px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    margin-bottom: 40px;
+  }
+
+  .body {
+    font-size: 30px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    word-break: keep-all;
+    margin-bottom: 60px;
+  }
+
+  .brand-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .brand-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 2px;
+  }
+
+  .brand-handle {
+    font-size: 22px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <div class="decoration-line"></div>
+    <h2 class="heading">{{ heading }}</h2>
+    <div class="divider"></div>
+    <p class="body">{{ body }}</p>
+    <div class="brand-info">
+      <span class="brand-name">{{ brand_name }}</span>
+      {% if instagram_handle %}
+      <span class="brand-handle">@{{ instagram_handle }}</span>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
