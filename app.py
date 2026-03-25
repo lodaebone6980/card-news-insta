@@ -1,13 +1,15 @@
 """AI 카드뉴스 자동생성기 — 웹 인터페이스 (FastAPI)"""
 
 import asyncio
+import hashlib
 import json
 import os
+import secrets
 import traceback
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -21,30 +23,138 @@ app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
 app.mount("/samples", StaticFiles(directory=str(PROJECT_ROOT / "samples")), name="samples")
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="static")
 
+# 세션 저장소 (서버 메모리 — 프로덕션에서는 Redis 등으로 교체)
+_sessions: dict[str, dict] = {}
+
+SESSION_COOKIE = "cn_session"
+
+
+def get_current_user(request: Request) -> dict | None:
+    token = request.cookies.get(SESSION_COOKIE)
+    if token and token in _sessions:
+        return _sessions[token]
+    return None
+
 
 # ─── 페이지 라우트 ───
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    """메인 페이지"""
     html_path = PROJECT_ROOT / "static" / "index.html"
     return HTMLResponse(html_path.read_text(encoding="utf-8"))
 
 
-@app.get("/api/brand", response_class=JSONResponse)
+# ─── 인증 API ───
+
+@app.post("/api/login")
+async def api_login(request: Request):
+    data = await request.json()
+    username = data.get("username", "")
+    password = data.get("password", "")
+    ip = request.client.host if request.client else ""
+    ua = request.headers.get("user-agent", "")[:200]
+
+    try:
+        from pipeline.database import login
+        user = login(username, password, ip, ua)
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)})
+
+    if not user:
+        return JSONResponse({"status": "error", "message": "아이디 또는 비밀번호가 틀렸습니다."})
+
+    token = secrets.token_hex(32)
+    _sessions[token] = user
+    resp = JSONResponse({"status": "ok", "user": user})
+    resp.set_cookie(SESSION_COOKIE, token, httponly=True, max_age=86400 * 7, samesite="lax")
+    return resp
+
+
+@app.post("/api/logout")
+async def api_logout(request: Request):
+    token = request.cookies.get(SESSION_COOKIE)
+    if token and token in _sessions:
+        # 접속 로그
+        try:
+            from pipeline.database import get_sb
+            user = _sessions[token]
+            get_sb().table("cn_access_logs").insert({
+                "user_id": user["id"],
+                "action": "logout",
+            }).execute()
+        except Exception:
+            pass
+        del _sessions[token]
+    resp = JSONResponse({"status": "ok"})
+    resp.delete_cookie(SESSION_COOKIE)
+    return resp
+
+
+@app.get("/api/me")
+async def api_me(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"status": "error", "message": "로그인이 필요합니다."}, status_code=401)
+    return JSONResponse({"status": "ok", "user": user})
+
+
+# ─── 어드민: 회원관리 ───
+
+@app.get("/api/admin/users")
+async def admin_users(request: Request):
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"status": "error", "message": "권한 없음"}, status_code=403)
+    from pipeline.database import get_all_users
+    return JSONResponse({"status": "ok", "users": get_all_users()})
+
+
+@app.post("/api/admin/users")
+async def admin_create_user(request: Request):
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"status": "error", "message": "권한 없음"}, status_code=403)
+    data = await request.json()
+    from pipeline.database import create_user
+    try:
+        new_user = create_user(data["username"], data["password"], data.get("role", "user"))
+        return JSONResponse({"status": "ok", "user": new_user})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)})
+
+
+@app.delete("/api/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, request: Request):
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"status": "error", "message": "권한 없음"}, status_code=403)
+    from pipeline.database import delete_user
+    delete_user(user_id)
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/api/admin/logs")
+async def admin_logs(request: Request):
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"status": "error", "message": "권한 없음"}, status_code=403)
+    from pipeline.database import get_access_logs
+    return JSONResponse({"status": "ok", "logs": get_access_logs(100)})
+
+
+# ─── 브랜드 ───
+
+@app.get("/api/brand")
 async def get_brand():
-    """현재 brand.md 설정 반환"""
     from pipeline.config import parse_brand
     try:
-        brand = parse_brand()
-        return {"status": "ok", "brand": brand}
+        return JSONResponse({"status": "ok", "brand": parse_brand()})
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse({"status": "error", "message": str(e)})
 
 
-@app.post("/api/brand", response_class=JSONResponse)
+@app.post("/api/brand")
 async def save_brand(request: Request):
-    """brand.md 저장"""
     data = await request.json()
     try:
         md = f"""# 브랜드 가이드
@@ -70,89 +180,118 @@ async def save_brand(request: Request):
 - {data.get('cta', '')}
 """
         BRAND_PATH.write_text(md, encoding="utf-8")
-        return {"status": "ok"}
+        return JSONResponse({"status": "ok"})
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse({"status": "error", "message": str(e)})
 
 
-@app.post("/api/generate", response_class=JSONResponse)
-async def generate():
-    """카드뉴스 생성 파이프라인 실행"""
+# ─── 카드뉴스 생성 ───
+
+@app.post("/api/generate")
+async def generate(request: Request):
     has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
     has_vertex = (
         os.environ.get("VERTEX_AI_ENABLED", "").lower() in ("true", "1", "yes")
         and bool(os.environ.get("GCP_PROJECT_ID"))
     )
     if not has_gemini and not has_vertex:
-        return {"status": "error", "message": "GEMINI_API_KEY 또는 VERTEX_AI_ENABLED + GCP_PROJECT_ID를 설정하세요."}
+        return JSONResponse({"status": "error", "message": "GEMINI_API_KEY 또는 VERTEX_AI_ENABLED + GCP_PROJECT_ID를 설정하세요."})
+
+    user = get_current_user(request)
 
     try:
         session_name = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # Step 1: 크롤링
         from pipeline.crawler import crawl
         headlines = await crawl()
         if not headlines:
-            return {"status": "error", "message": "수집된 헤드라인이 없습니다."}
+            return JSONResponse({"status": "error", "message": "수집된 헤드라인이 없습니다."})
 
-        # Step 2: 주제 선정
         from pipeline.topic_selector import select_topic
         topic = await asyncio.to_thread(select_topic, headlines)
 
-        # Step 3: 기획안
         from pipeline.editor import create_plan
         plan = await asyncio.to_thread(create_plan, topic)
 
-        # Step 4: 리서치
         from pipeline.researcher import research
         research_data = await asyncio.to_thread(research, plan)
 
-        # Step 5: 텍스트
         from pipeline.writer import write
         writer_output = await asyncio.to_thread(write, plan, research_data)
 
-        # Step 6: 이미지
         from pipeline.image_generator import generate_images
         image_paths = await asyncio.to_thread(generate_images, writer_output, session_name)
 
-        # Step 7: 렌더링
         from pipeline.renderer import render_all
         png_paths = await asyncio.to_thread(render_all, writer_output, image_paths, session_name)
 
-        # 세션 데이터 저장
+        # 로컬 세션 데이터 저장
         session_dir = OUTPUT_DIR / session_name
         session_data = {
-            "session_name": session_name,
-            "topic": topic,
-            "plan": plan,
-            "research": research_data,
-            "writer_output": writer_output,
-            "image_paths": image_paths,
-            "png_paths": png_paths,
+            "session_name": session_name, "topic": topic, "plan": plan,
+            "research": research_data, "writer_output": writer_output,
+            "image_paths": image_paths, "png_paths": png_paths,
         }
         (session_dir / "session_data.json").write_text(
             json.dumps(session_data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
-        # PNG URL 리스트
         png_urls = [f"/output/{session_name}/{Path(p).name}" for p in png_paths]
 
-        return {
-            "status": "ok",
-            "session_name": session_name,
+        # Supabase 히스토리 저장
+        try:
+            from pipeline.database import save_card_history
+            save_card_history(
+                user_id=user["id"] if user else None,
+                session_name=session_name,
+                category="auto",
+                topic=topic.get("selected_topic", ""),
+                slides_count=len(png_paths),
+                slides_data=writer_output,
+                png_urls=png_urls,
+            )
+        except Exception as db_err:
+            print(f"[Warning] Supabase 저장 실패: {db_err}")
+
+        return JSONResponse({
+            "status": "ok", "session_name": session_name,
             "topic": topic.get("selected_topic", ""),
-            "slides_count": len(png_paths),
-            "png_urls": png_urls,
-        }
+            "slides_count": len(png_paths), "png_urls": png_urls,
+        })
 
     except Exception as e:
         traceback.print_exc()
-        return {"status": "error", "message": str(e)}
+        return JSONResponse({"status": "error", "message": str(e)})
 
 
-@app.get("/api/sessions", response_class=JSONResponse)
+# ─── 히스토리 (Supabase) ───
+
+@app.get("/api/history")
+async def api_history(request: Request):
+    try:
+        from pipeline.database import get_card_history
+        history = get_card_history(limit=30)
+        return JSONResponse({"status": "ok", "history": history})
+    except Exception as e:
+        return JSONResponse({"status": "ok", "history": []})
+
+
+@app.get("/api/history/{history_id}")
+async def api_history_item(history_id: int):
+    try:
+        from pipeline.database import get_card_history_item
+        item = get_card_history_item(history_id)
+        if item:
+            return JSONResponse({"status": "ok", "data": item})
+        return JSONResponse({"status": "error", "message": "not found"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)})
+
+
+# ─── 로컬 세션 (레거시 호환) ───
+
+@app.get("/api/sessions")
 async def list_sessions():
-    """생성된 세션 목록"""
     sessions = []
     if OUTPUT_DIR.exists():
         for d in sorted(OUTPUT_DIR.iterdir(), reverse=True):
@@ -162,27 +301,26 @@ async def list_sessions():
                 sessions.append({
                     "name": d.name,
                     "topic": data.get("topic", {}).get("selected_topic", ""),
-                    "slides_count": len(pngs),
-                    "png_urls": pngs,
+                    "slides_count": len(pngs), "png_urls": pngs,
                 })
-    return {"sessions": sessions}
+    return JSONResponse({"sessions": sessions})
 
 
-@app.get("/api/sessions/{session_name}", response_class=JSONResponse)
+@app.get("/api/sessions/{session_name}")
 async def get_session(session_name: str):
-    """특정 세션 상세"""
     path = OUTPUT_DIR / session_name / "session_data.json"
     if not path.exists():
-        return {"status": "error", "message": "세션을 찾을 수 없습니다."}
+        return JSONResponse({"status": "error", "message": "세션을 찾을 수 없습니다."})
     data = json.loads(path.read_text(encoding="utf-8"))
     pngs = [f"/output/{session_name}/{Path(p).name}" for p in data.get("png_paths", [])]
     data["png_urls"] = pngs
-    return {"status": "ok", "data": data}
+    return JSONResponse({"status": "ok", "data": data})
 
 
-@app.get("/api/samples", response_class=JSONResponse)
+# ─── 샘플 ───
+
+@app.get("/api/samples")
 async def list_samples():
-    """샘플 카드뉴스 목록"""
     samples_dir = PROJECT_ROOT / "samples"
     categories = {
         "shopping": {"name": "쇼핑", "color": "#E74C3C", "desc": "가성비 꿀템, 핫딜, 추천 리스트"},
@@ -193,9 +331,6 @@ async def list_samples():
     for cat_key, cat_info in categories.items():
         cat_dir = samples_dir / cat_key
         if cat_dir.exists():
-            pngs = sorted([
-                f"/samples/{cat_key}/{f.name}"
-                for f in cat_dir.glob("*.png")
-            ])
+            pngs = sorted([f"/samples/{cat_key}/{f.name}" for f in cat_dir.glob("*.png")])
             result.append({**cat_info, "key": cat_key, "slides": pngs})
-    return {"categories": result}
+    return JSONResponse({"categories": result})

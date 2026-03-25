@@ -555,16 +555,42 @@
 <div class="layout">
   <!-- ════ 왼쪽: 컨트롤 패널 ════ -->
   <div class="left-panel">
+    <!-- 로그인 바 -->
+    <div id="authBar" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:12px;font-size:13px">
+      <span id="authUser" style="color:var(--text-dim)"></span>
+      <button id="loginBtn" class="btn" onclick="showLogin()" style="width:auto;padding:8px 16px;font-size:12px;background:var(--surface2);color:var(--text)">로그인</button>
+      <button id="logoutBtn" class="btn" onclick="doLogout()" style="width:auto;padding:8px 16px;font-size:12px;background:var(--surface2);color:var(--text);display:none">로그아웃</button>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center">
+      <div class="card" style="width:360px;margin:0">
+        <h3>로그인</h3>
+        <div class="form-group">
+          <label>아이디</label>
+          <input id="loginId" placeholder="아이디 입력" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input id="loginPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div id="loginError" style="color:var(--error);font-size:12px;margin-bottom:12px;display:none"></div>
+        <button class="btn btn-primary" onclick="doLogin()">로그인</button>
+        <button class="btn" onclick="hideLogin()" style="margin-top:8px;background:var(--surface2);color:var(--text-dim)">취소</button>
+      </div>
+    </div>
+
     <div class="header">
       <h1>AI Card News Generator</h1>
       <p>RSS 뉴스 → AI 자동 인스타 카드뉴스</p>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" id="mainTabs">
       <button class="tab" onclick="showTab('samples')">샘플</button>
       <button class="tab active" onclick="showTab('brand')">브랜드</button>
       <button class="tab" onclick="showTab('generate')">생성</button>
       <button class="tab" onclick="showTab('history')">히스토리</button>
+      <button class="tab" id="adminTab" onclick="showTab('admin')" style="display:none">관리</button>
     </div>
 
     <!-- ── 브랜드 설정 ── -->
@@ -737,8 +763,26 @@
     <!-- ── 히스토리 ── -->
     <div id="panel-history" class="panel">
       <div class="card">
-        <h3>생성 히스토리</h3>
-        <div id="sessionList"><p style="color:var(--text-dim);font-size:13px">로딩 중...</p></div>
+        <h3>생성 히스토리 (Supabase)</h3>
+        <div id="historyList"><p style="color:var(--text-dim);font-size:13px">로딩 중...</p></div>
+      </div>
+    </div>
+
+    <!-- ── 어드민 (로그인한 admin만 보임) ── -->
+    <div id="panel-admin" class="panel">
+      <div class="card">
+        <h3>회원 관리</h3>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input id="newUser" placeholder="아이디" style="flex:1">
+          <input id="newPw" placeholder="비밀번호" type="password" style="flex:1">
+          <select id="newRole" style="width:80px"><option value="user">user</option><option value="admin">admin</option></select>
+          <button class="btn btn-primary" onclick="addUser()" style="width:auto;padding:10px 16px;font-size:12px">추가</button>
+        </div>
+        <div id="userList"></div>
+      </div>
+      <div class="card">
+        <h3>접속 기록</h3>
+        <div id="logList" style="max-height:400px;overflow-y:auto"></div>
       </div>
     </div>
   </div>
@@ -798,15 +842,160 @@ let currentSlides = [];
 let currentSlideIdx = 0;
 
 // ── 탭 ──
+let currentUser = null;
+
 function showTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['samples','brand','generate','history'][i] === name);
+  document.querySelectorAll('.tab').forEach(t => {
+    const tabName = t.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+    t.classList.toggle('active', tabName === name);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
+  const panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
   if (name === 'samples') loadSamples();
-  if (name === 'history') loadSessions();
+  if (name === 'history') loadHistory();
   if (name === 'brand') loadBrand();
+  if (name === 'admin') { loadUsers(); loadLogs(); }
+}
+
+// ── 인증 ──
+function showLogin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('loginId').focus(); }
+function hideLogin() { document.getElementById('loginModal').style.display = 'none'; }
+
+async function doLogin() {
+  const id = document.getElementById('loginId').value;
+  const pw = document.getElementById('loginPw').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:id,password:pw}) });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      currentUser = data.user;
+      hideLogin();
+      updateAuthUI();
+    } else {
+      errEl.textContent = data.message;
+      errEl.style.display = 'block';
+    }
+  } catch(e) { errEl.textContent = '로그인 실패'; errEl.style.display = 'block'; }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method:'POST' });
+  currentUser = null;
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const userEl = document.getElementById('authUser');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const adminTab = document.getElementById('adminTab');
+  if (currentUser) {
+    userEl.textContent = currentUser.username + (currentUser.role === 'admin' ? ' (관리자)' : '');
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'block';
+    adminTab.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+  } else {
+    userEl.textContent = '';
+    loginBtn.style.display = 'block';
+    logoutBtn.style.display = 'none';
+    adminTab.style.display = 'none';
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    if (data.status === 'ok') { currentUser = data.user; updateAuthUI(); }
+  } catch(e) {}
+}
+
+// ── 어드민: 회원관리 ──
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/admin/users');
+    const data = await res.json();
+    if (data.status !== 'ok') return;
+    document.getElementById('userList').innerHTML = data.users.map(u =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:13px">' +
+      '<div><strong>' + u.username + '</strong> <span style="color:var(--text-dim)">(' + u.role + ')</span>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-top:2px">가입: ' + (u.created_at||'').slice(0,10) + ' | 마지막 접속: ' + (u.last_login_at ? u.last_login_at.slice(0,16).replace('T',' ') : '없음') + '</div></div>' +
+      (u.username !== 'admin' ? '<button onclick="deleteUser(\''+u.id+'\')" style="background:var(--error);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer">삭제</button>' : '') +
+      '</div>'
+    ).join('');
+  } catch(e) {}
+}
+
+async function addUser() {
+  const u = document.getElementById('newUser').value;
+  const p = document.getElementById('newPw').value;
+  const r = document.getElementById('newRole').value;
+  if (!u || !p) return;
+  await fetch('/api/admin/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p,role:r}) });
+  document.getElementById('newUser').value = '';
+  document.getElementById('newPw').value = '';
+  loadUsers();
+}
+
+async function deleteUser(id) {
+  if (!confirm('정말 삭제?')) return;
+  await fetch('/api/admin/users/' + id, { method:'DELETE' });
+  loadUsers();
+}
+
+async function loadLogs() {
+  try {
+    const res = await fetch('/api/admin/logs');
+    const data = await res.json();
+    if (data.status !== 'ok') return;
+    document.getElementById('logList').innerHTML = data.logs.map(l =>
+      '<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+      '<span style="color:var(--text-dim);min-width:130px">' + (l.created_at||'').slice(0,16).replace('T',' ') + '</span>' +
+      '<span style="min-width:60px;font-weight:600;color:' + (l.action==='login'?'var(--success)':'var(--text-dim)') + '">' + l.action + '</span>' +
+      '<span>' + (l.cn_users?.username || '?') + '</span>' +
+      '<span style="color:var(--text-dim)">' + (l.ip_address||'') + '</span>' +
+      '</div>'
+    ).join('') || '<p style="color:var(--text-dim)">접속 기록이 없습니다.</p>';
+  } catch(e) {}
+}
+
+// ── 히스토리 (Supabase) ──
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history');
+    const data = await res.json();
+    const el = document.getElementById('historyList');
+    if (!data.history || !data.history.length) {
+      el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">아직 생성된 카드뉴스가 없습니다.</p>';
+      return;
+    }
+    el.innerHTML = data.history.map(h => {
+      const urls = h.png_urls || [];
+      return '<div style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:10px;cursor:pointer" onclick="viewHistory('+h.id+')">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:8px">' +
+        '<strong style="font-size:14px">' + (h.topic || h.session_name) + '</strong>' +
+        '<span style="font-size:11px;color:var(--text-dim)">' + (h.category||'') + ' | ' + h.slides_count + '장</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text-dim)">' + (h.created_at||'').slice(0,16).replace('T',' ') + '</div>' +
+        (urls.length ? '<div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto">' + urls.map(u=>'<img src="'+u+'" style="height:80px;border-radius:6px;flex-shrink:0">').join('') + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('historyList').innerHTML = '<p style="color:var(--error);font-size:13px">로드 실패</p>';
+  }
+}
+
+async function viewHistory(id) {
+  try {
+    const res = await fetch('/api/history/' + id);
+    const data = await res.json();
+    if (data.status === 'ok' && data.data.png_urls) {
+      setSlides(data.data.png_urls, data.data.topic || '카드뉴스');
+    }
+  } catch(e) {}
 }
 
 // ── 컬러 ──
@@ -1086,6 +1275,7 @@ async function loadSampleToPhone(catKey, catName) {
 }
 
 // 초기화
+checkAuth();
 loadBrand();
 </script>
 </body>
