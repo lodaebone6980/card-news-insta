@@ -5,11 +5,28 @@ RSS 뉴스를 크롤링하여 AI가 자동으로 인스타그램 카드뉴스(10
 Gemini API를 사용하며, `python main.py` 한 번 실행으로 전체 파이프라인이 동작한다.
 
 ## 기술 스택
-- Python 3.11+
-- Google Gemini API (Flash / Pro / Flash-Image)
+- Python 3.12+ / FastAPI / Uvicorn
+- Google Gemini API (Flash / Pro / Flash-Image) + Vertex AI 듀얼 지원
 - httpx (비동기 RSS 크롤링)
-- Playwright (HTML → PNG 렌더링)
+- Playwright (HTML → PNG 렌더링, device_scale_factor=2 고해상도)
 - Jinja2 (HTML 템플릿 엔진)
+- Supabase (사용자/히스토리/접속기록 DB)
+
+## 슬라이드 타입 시스템 (8종)
+- `cover` — 표지 (훅 제목 + 배경 이미지)
+- `content` — 기본 본문 (태그 + 제목 + 본문 + 배경)
+- `content-stat` — 통계 강조 (큰 숫자 + 설명)
+- `content-list` — 리스트형 (번호 + 제목 + 설명)
+- `content-quote` — 인용구 (큰따옴표 + 출처)
+- `content-split` — 좌우 비교 (A vs B)
+- `content-grid` — 2x2 그리드 (아이콘 + 제목 + 설명)
+- `last` — CTA (마무리 메시지 + 행동 유도)
+
+## 참고 레포 (GitHub 학습)
+- sgtlim0/instagram-card-news — 14종 슬라이드 타입, 8 디자인 템플릿
+- FranciscoMoretti/carousel-generator — Zod 스키마 + 30 테마
+- geongi-im/card-news-generator — Gemini + PIL + 인스타 자동포스팅
+- mutonby/viraloop — Hook→Problem→Solution→CTA 구조 + 성과 학습 루프
 
 ## 디렉토리 구조
 - `strategies/` — 브랜딩/에디토리얼 전략서

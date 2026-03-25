@@ -42,10 +42,13 @@ def render_html(slide: dict, image_path: str, slide_index: int, total_slides: in
 
 
 async def capture_png(html_content: str, output_path: Path) -> None:
-    """HTML을 1080x1350 PNG로 캡처"""
+    """HTML을 1080x1350 PNG로 캡처 (2x 해상도 = 2160x2700)"""
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": 1080, "height": 1350})
+        page = await browser.new_page(
+            viewport={"width": 1080, "height": 1350},
+            device_scale_factor=2,  # 인스타그램 고해상도
+        )
         await page.set_content(html_content, wait_until="networkidle")
         await page.screenshot(path=str(output_path), full_page=False)
         await browser.close()
