@@ -273,6 +273,7 @@ async def re_render(request: Request):
     slide_index = data.get("slide_index", 0)
     session_name = data.get("session_name", "edited")
     theme = data.get("theme", "dark")
+    image_url = data.get("image_url", "")
 
     try:
         from pipeline.renderer import render_html, capture_png
@@ -281,16 +282,16 @@ async def re_render(request: Request):
         output_dir = OUTPUT_DIR / session_name
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        html = render_html(slide, "", slide_index, data.get("total_slides", 7), theme)
+        # 기존 이미지 경로 복원 시도
+        existing_img = output_dir / "images" / f"slide_{slide_index + 1}.png"
+        img_path = str(existing_img) if existing_img.exists() else ""
+
+        html = render_html(slide, img_path, slide_index, data.get("total_slides", 7), theme)
         html_path = output_dir / f"slide_{slide_index + 1}.html"
         html_path.write_text(html, encoding="utf-8")
 
         png_path = output_dir / f"slide_{slide_index + 1}.png"
-
-        import asyncio
-        await asyncio.to_thread(
-            lambda: __import__('asyncio').run(capture_png(html, png_path))
-        )
+        await capture_png(html, png_path)
 
         png_url = f"/output/{session_name}/slide_{slide_index + 1}.png?t={int(datetime.now().timestamp())}"
         return JSONResponse({"status": "ok", "png_url": png_url})
@@ -298,6 +299,24 @@ async def re_render(request: Request):
     except Exception as e:
         traceback.print_exc()
         return JSONResponse({"status": "error", "message": str(e)})
+
+
+@app.get("/api/slide-html")
+async def get_slide_html(request: Request):
+    """슬라이드 HTML을 반환 (라이브 프리뷰용)"""
+    from pipeline.renderer import render_html
+    params = dict(request.query_params)
+    slide = {
+        "slide_type": params.get("slide_type", "content"),
+        "heading": params.get("heading", ""),
+        "body": params.get("body", ""),
+        "category_tag": params.get("category_tag", ""),
+    }
+    theme = params.get("theme", "dark")
+    idx = int(params.get("slide_index", "0"))
+    total = int(params.get("total_slides", "7"))
+    html = render_html(slide, "", idx, total, theme)
+    return HTMLResponse(html)
 
 
 # ─── 히스토리 (Supabase) ───

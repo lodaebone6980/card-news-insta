@@ -2,7 +2,7 @@
 
 import json
 
-from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand
+from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand, safe_parse_json
 
 
 def create_plan(topic: dict) -> dict:
@@ -37,6 +37,6 @@ def create_plan(topic: dict) -> dict:
         },
     )
 
-    result = json.loads(response.text)
+    result = safe_parse_json(response.text)
     print(f"[Editor] 기획안 완성 — 앵글: {result.get('angle', 'N/A')}")
     return result

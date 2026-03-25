@@ -2,7 +2,7 @@
 
 import json
 
-from .config import MODEL_PRO, get_genai_client, load_prompt, parse_brand
+from .config import MODEL_PRO, get_genai_client, load_prompt, parse_brand, safe_parse_json
 
 
 def write(plan: dict, research_data: dict) -> dict:
@@ -50,7 +50,7 @@ def write(plan: dict, research_data: dict) -> dict:
         },
     )
 
-    result = json.loads(response.text)
+    result = safe_parse_json(response.text)
     slides = result.get("slides", [])
     print(f"[Writer] {len(slides)}장 슬라이드 텍스트 완성")
     return result

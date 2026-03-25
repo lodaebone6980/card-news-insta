@@ -400,6 +400,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
             <span style="font-size:11px">콘텐츠를 생성하세요</span>
           </div>
           <img id="phImg" style="display:none" alt="slide">
+          <iframe id="phLive" style="display:none;width:100%;height:100%;border:none;transform-origin:top left" sandbox="allow-same-origin"></iframe>
           <button class="slide-nav-arrow prev" id="phPrev" onclick="navPhone(-1)">&#8249;</button>
           <button class="slide-nav-arrow next" id="phNext" onclick="navPhone(1)">&#8250;</button>
         </div>
@@ -634,15 +635,15 @@ function renderEditor() {
   const isLight = s.theme === 'light';
   document.getElementById('editorCard').innerHTML = `
     <div class="ed-field"><div class="ed-label">카테고리</div>
-      <input class="ed-input" value="${s.category_tag||''}" onchange="editSlides[editIdx].category_tag=this.value" placeholder="예: AI & INSIGHT"></div>
+      <input class="ed-input" value="${s.category_tag||''}" oninput="editSlides[editIdx].category_tag=this.value;livePreview()" placeholder="예: AI & INSIGHT"></div>
     <div class="ed-field"><div class="ed-label">제목</div>
-      <textarea class="ed-textarea" onchange="editSlides[editIdx].heading=this.value" placeholder="제목을 입력하세요" style="min-height:70px;font-size:17px;font-weight:700">${s.heading||''}</textarea></div>
+      <textarea class="ed-textarea" oninput="editSlides[editIdx].heading=this.value;livePreview()" placeholder="제목을 입력하세요" style="min-height:70px;font-size:17px;font-weight:700">${s.heading||''}</textarea></div>
     <div class="ed-field"><div class="ed-label">부제</div>
-      <textarea class="ed-textarea" onchange="editSlides[editIdx].body=this.value" placeholder="본문/부제를 입력하세요">${s.body||''}</textarea></div>
+      <textarea class="ed-textarea" oninput="editSlides[editIdx].body=this.value;livePreview()" placeholder="본문/부제를 입력하세요">${s.body||''}</textarea></div>
     <div class="ed-field"><div class="ed-label">하이라이트</div>
-      <input class="ed-input" value="${s.highlight||''}" onchange="editSlides[editIdx].highlight=this.value" placeholder="강조할 문구"></div>
+      <input class="ed-input" value="${s.highlight||''}" oninput="editSlides[editIdx].highlight=this.value;livePreview()" placeholder="강조할 문구"></div>
     <div class="ed-field"><div class="ed-label">캡션</div>
-      <input class="ed-input" value="${s.caption||''}" onchange="editSlides[editIdx].caption=this.value" placeholder="캡션을 입력하세요"></div>
+      <input class="ed-input" value="${s.caption||''}" oninput="editSlides[editIdx].caption=this.value;livePreview()" placeholder="캡션을 입력하세요"></div>
 
     <div class="ed-field"><div class="ed-label">색상 프리셋</div>
       <div class="preset-row">
@@ -673,6 +674,52 @@ function renderEditor() {
 function setTheme(t) {
   editSlides[editIdx].theme = t;
   renderEditor();
+  livePreview();
+}
+
+// ── 라이브 프리뷰 (디바운스 300ms) ──
+let liveTimer = null;
+let liveMode = false;
+function livePreview() {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(doLivePreview, 300);
+}
+async function doLivePreview() {
+  if (!editSlides.length) return;
+  const s = editSlides[editIdx];
+  const params = new URLSearchParams({
+    slide_type: s.slide_type || 'content',
+    heading: s.heading || '',
+    body: s.body || '',
+    category_tag: s.category_tag || '',
+    theme: s.theme || 'dark',
+    slide_index: editIdx,
+    total_slides: editSlides.length,
+  });
+  try {
+    const iframe = document.getElementById('phLive');
+    const img = document.getElementById('phImg');
+    const ph = document.getElementById('phPlaceholder');
+    iframe.src = '/api/slide-html?' + params.toString();
+    // iframe 크기를 4:5 비율에 맞게 스케일
+    const bodyW = document.getElementById('instaBody').offsetWidth;
+    const scale = bodyW / 1080;
+    iframe.style.transform = `scale(${scale})`;
+    iframe.style.width = '1080px';
+    iframe.style.height = '1350px';
+    iframe.style.display = 'block';
+    img.style.display = 'none';
+    ph.style.display = 'none';
+    liveMode = true;
+  } catch(e) { console.error('Live preview error:', e); }
+}
+// 라이브 모드 해제 (PNG로 전환)
+function exitLiveMode() {
+  const iframe = document.getElementById('phLive');
+  const img = document.getElementById('phImg');
+  iframe.style.display = 'none';
+  if (phoneSlides.length) { img.style.display = 'block'; }
+  liveMode = false;
 }
 
 async function reRenderSlide() {
@@ -708,6 +755,7 @@ function deleteSlide() {
 }
 function navEditSlide(d) {
   editIdx = Math.max(0, Math.min(editSlides.length-1, editIdx+d));
+  exitLiveMode();
   renderEditor();
 }
 function addSlide() { /* placeholder */ }

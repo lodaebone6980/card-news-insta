@@ -2,7 +2,7 @@
 
 import json
 
-from .config import MODEL_PRO, get_genai_client, load_prompt
+from .config import MODEL_PRO, get_genai_client, load_prompt, safe_parse_json
 
 
 def research(plan: dict) -> dict:
@@ -29,37 +29,38 @@ def research(plan: dict) -> dict:
 
 Google Search를 사용해서 최신 정보를 찾아주세요."""
 
-    print("[Researcher] Gemini Pro + Google Search로 리서치 중...")
+    print("[Researcher] Gemini로 리서치 중...")
 
     client = get_genai_client()
-    response = client.models.generate_content(
-        model=MODEL_PRO,
-        contents=[
-            {"role": "user", "parts": [{"text": system_prompt + "\n\n" + user_message}]}
-        ],
-        config={
-            "temperature": 0.4,
-            "response_mime_type": "application/json",
-            "tools": [{"google_search": {}}],
-        },
-    )
+    contents = [{"role": "user", "parts": [{"text": system_prompt + "\n\n" + user_message}]}]
 
-    # JSON 응답 파싱 시도
+    # Google Search 도구 사용 시도, 실패하면 도구 없이 재시도
     try:
-        result = json.loads(response.text)
-    except json.JSONDecodeError:
-        # Google Search 결과가 포함된 경우 텍스트에서 JSON 추출
-        import re
-        json_match = re.search(r"\{[\s\S]*\}", response.text)
-        if json_match:
-            result = json.loads(json_match.group())
-        else:
-            result = {
-                "slides": [],
-                "overall_context": response.text,
-                "key_statistics": [],
-                "sources": [],
-            }
+        response = client.models.generate_content(
+            model=MODEL_PRO,
+            contents=contents,
+            config={
+                "temperature": 0.4,
+                "response_mime_type": "application/json",
+                "tools": [{"google_search": {}}],
+            },
+        )
+    except Exception as e:
+        print(f"  [경고] Google Search 실패, 도구 없이 재시도: {e}")
+        response = client.models.generate_content(
+            model=MODEL_PRO,
+            contents=contents,
+            config={"temperature": 0.4, "response_mime_type": "application/json"},
+        )
+
+    result = safe_parse_json(response.text)
+    if "error" in result:
+        result = {
+            "slides": [],
+            "overall_context": result.get("raw", ""),
+            "key_statistics": [],
+            "sources": [],
+        }
 
     print("[Researcher] 리서치 완료")
     return result

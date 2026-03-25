@@ -1,5 +1,6 @@
 """프로젝트 설정 및 brand.md 파싱"""
 
+import json
 import os
 import re
 from pathlib import Path
@@ -20,10 +21,34 @@ GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
 # 서비스 계정 키 JSON 경로 (Railway에서는 환경변수로 JSON 내용을 직접 넣을 수도 있음)
 GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
 
-# Gemini 모델명
-MODEL_FLASH = "gemini-2.5-flash-preview-05-20"
-MODEL_PRO = "gemini-2.5-pro-preview-05-06"
-MODEL_IMAGE = "gemini-2.0-flash-exp"  # 이미지 생성용 (변경될 수 있음)
+# Gemini 모델명 (환경변수로 오버라이드 가능)
+MODEL_FLASH = os.environ.get("GEMINI_MODEL_FLASH", "gemini-2.0-flash")
+MODEL_PRO = os.environ.get("GEMINI_MODEL_PRO", "gemini-2.0-flash")
+MODEL_IMAGE = os.environ.get("GEMINI_MODEL_IMAGE", "gemini-2.0-flash-exp")
+
+
+def safe_parse_json(text: str) -> dict:
+    """Gemini 응답에서 JSON을 안전하게 파싱"""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # 마크다운 코드블록 제거
+    import re
+    m = re.search(r'```(?:json)?\s*([\{\[][\s\S]*?[\}\]])\s*```', text)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            pass
+    # 중괄호 추출
+    m = re.search(r'(\{[\s\S]*\})', text)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            pass
+    return {"error": "JSON 파싱 실패", "raw": text[:500]}
 
 
 def get_genai_client():

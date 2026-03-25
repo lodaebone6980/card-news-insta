@@ -2,7 +2,7 @@
 
 import json
 
-from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand
+from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand, safe_parse_json
 
 
 def select_topic(headlines: list[dict]) -> dict:
@@ -42,6 +42,6 @@ def select_topic(headlines: list[dict]) -> dict:
         },
     )
 
-    result = json.loads(response.text)
+    result = safe_parse_json(response.text)
     print(f"[Topic Selector] 선정된 주제: {result.get('selected_topic', 'N/A')}")
     return result
