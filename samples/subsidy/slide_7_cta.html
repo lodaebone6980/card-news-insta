@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(160deg, #2563EB, #1B2A4A);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 100px;
+  }
+
+  .heading {
+    font-size: 50px; font-weight: 900;
+    color: #FFF;
+    line-height: 1.4;
+    margin-bottom: 36px;
+  }
+
+  .accent { color: #60A5FA; }
+
+  .divider {
+    width: 80px; height: 3px;
+    background: rgba(255,255,255,0.3);
+    margin-bottom: 36px;
+  }
+
+  .checklist {
+    text-align: left;
+    margin-bottom: 48px;
+  }
+
+  .check-item {
+    font-size: 26px;
+    color: rgba(255,255,255,0.85);
+    line-height: 2;
+    padding-left: 8px;
+  }
+
+  .check-item::before {
+    content: '✓ ';
+    color: #60A5FA;
+    font-weight: 900;
+  }
+
+  .cta-box {
+    background: #FFF;
+    border-radius: 16px;
+    padding: 28px 44px;
+    margin-top: 12px;
+  }
+
+  .cta-text {
+    font-size: 26px; font-weight: 700;
+    color: #2563EB;
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <h2 class="heading"><span class="accent">내 돈</span>인데<br>안 받으면 손해예요</h2>
+    <div class="divider"></div>
+    <div class="checklist">
+      <div class="check-item">저장해두고 하나씩 신청하세요</div>
+      <div class="check-item">해당되는 친구에게 공유해주세요</div>
+      <div class="check-item">마감일 전에 꼭 확인하세요</div>
+    </div>
+    <div class="cta-box">
+      <span class="cta-text">팔로우하면 새로운 지원금 알려드려요</span>
+    </div>
+  </div>
+</body>
+</html>

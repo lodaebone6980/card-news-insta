@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+
+  .slide {
+    width: 1080px; height: 1350px;
+    background: #F0F4FF;
+    padding: 80px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+  }
+
+  .num-badge {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 56px; height: 56px;
+    background: #2563EB;
+    color: #FFF;
+    font-size: 28px; font-weight: 900;
+    border-radius: 14px;
+    margin-bottom: 24px;
+  }
+
+  .heading {
+    font-size: 44px; font-weight: 900;
+    color: #1A1A1A;
+    line-height: 1.35;
+    margin-bottom: 12px;
+  }
+
+  .amount-highlight {
+    font-size: 52px; font-weight: 900;
+    color: #2563EB;
+    margin-bottom: 32px;
+  }
+
+  .info-grid {
+    display: flex; flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .info-row {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: #FFF;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .info-label {
+    font-size: 18px; font-weight: 700;
+    color: #2563EB;
+    min-width: 80px;
+    padding-top: 2px;
+  }
+
+  .info-value {
+    font-size: 22px;
+    color: #333;
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  .tip-box {
+    background: #2563EB;
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .tip-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .tip-text {
+    font-size: 22px; font-weight: 500;
+    color: #FFF;
+    line-height: 1.5;
+  }
+
+  .page-num {
+    position: absolute;
+    top: 60px; right: 80px;
+    font-size: 18px; font-weight: 700;
+    color: #2563EB;
+  }
+</style>
+</head>
+<body>
+  <div class="slide" style="position:relative">
+    <span class="page-num">2 / 7</span>
+    <div class="num-badge">1</div>
+    <h2 class="heading">청년도약계좌</h2>
+    <div class="amount-highlight">최대 5,000만원</div>
+    <div class="info-grid">
+      <div class="info-row">
+        <span class="info-label">대상</span>
+        <span class="info-value">만 19~34세, 개인소득 7,500만원 이하</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">내용</span>
+        <span class="info-value">매월 70만원 납입 시 정부가 최대 6%<br>기여금 추가 지급 (5년 만기)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">신청</span>
+        <span class="info-value">시중 11개 은행 앱에서 신청 가능</span>
+      </div>
+    </div>
+    <div class="tip-box">
+      <span class="tip-icon">💡</span>
+      <span class="tip-text">소득이 낮을수록 정부 기여금 비율이 높아져요.<br>2,400만원 이하면 최대 6% 매칭!</span>
+    </div>
+  </div>
+</body>
+</html>

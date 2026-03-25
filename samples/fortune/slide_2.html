@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(180deg, #1B1464 0%, #2D1B69 100%);
+    padding: 80px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .zodiac-icon {
+    font-size: 80px;
+    margin-bottom: 16px;
+  }
+
+  .zodiac-name {
+    font-size: 24px; font-weight: 700;
+    color: #FFD700;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+
+  .zodiac-years {
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 40px;
+  }
+
+  .heading {
+    font-size: 48px; font-weight: 900;
+    color: #FFF;
+    line-height: 1.35;
+    margin-bottom: 36px;
+  }
+
+  .fortune-grid {
+    display: flex; flex-direction: column;
+    gap: 20px;
+  }
+
+  .fortune-item {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,215,0,0.15);
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex; align-items: center; gap: 20px;
+  }
+
+  .fortune-label {
+    font-size: 18px; font-weight: 700;
+    color: #FFD700;
+    min-width: 80px;
+  }
+
+  .fortune-stars {
+    font-size: 20px;
+    color: #FFD700;
+    min-width: 100px;
+  }
+
+  .fortune-text {
+    font-size: 22px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .advice {
+    margin-top: 36px;
+    background: rgba(255,215,0,0.08);
+    border-left: 4px solid #FFD700;
+    padding: 24px 28px;
+    border-radius: 0 12px 12px 0;
+  }
+
+  .advice-title {
+    font-size: 18px; font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 8px;
+  }
+
+  .advice-text {
+    font-size: 24px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.6;
+  }
+
+  .page-num {
+    position: absolute;
+    top: 60px; right: 80px;
+    font-size: 18px;
+    color: rgba(255,255,255,0.25);
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <span class="page-num">2 / 7</span>
+    <div class="zodiac-icon">🐉</div>
+    <div class="zodiac-name">용띠 (辰)</div>
+    <div class="zodiac-years">1988 · 2000 · 2012년생</div>
+    <h2 class="heading">3월, 드디어 기회가 온다</h2>
+    <div class="fortune-grid">
+      <div class="fortune-item">
+        <span class="fortune-label">종합운</span>
+        <span class="fortune-stars">★★★★★</span>
+        <span class="fortune-text">막혔던 일이 한꺼번에 풀리는 달</span>
+      </div>
+      <div class="fortune-item">
+        <span class="fortune-label">재물운</span>
+        <span class="fortune-stars">★★★★☆</span>
+        <span class="fortune-text">예상치 못한 수입이 들어올 수 있어요</span>
+      </div>
+      <div class="fortune-item">
+        <span class="fortune-label">연애운</span>
+        <span class="fortune-stars">★★★☆☆</span>
+        <span class="fortune-text">급하게 결정하지 말고 천천히</span>
+      </div>
+    </div>
+    <div class="advice">
+      <div class="advice-title">이 달의 조언</div>
+      <div class="advice-text">주변 사람의 제안에 귀 기울여보세요.<br>거절하려던 것 중에 좋은 기회가 숨어 있어요.</div>
+    </div>
+  </div>
+</body>
+</html>

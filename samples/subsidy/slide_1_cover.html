@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+
+  .slide {
+    width: 1080px; height: 1350px;
+    background: linear-gradient(160deg, #1B2A4A 0%, #2563EB 100%);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 80px;
+    position: relative; overflow: hidden;
+  }
+
+  .bg-text {
+    position: absolute;
+    font-size: 280px; font-weight: 900;
+    color: rgba(255,255,255,0.03);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
+
+  .icon-row {
+    display: flex; gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .icon-pill {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #FFF;
+    font-size: 20px; font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 50px;
+  }
+
+  .amount {
+    font-size: 100px; font-weight: 900;
+    color: #FFF;
+    line-height: 1;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.2);
+  }
+
+  .amount-sub {
+    font-size: 36px; font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+  }
+
+  .heading {
+    font-size: 56px; font-weight: 900;
+    color: #FFF;
+    line-height: 1.35;
+    margin-bottom: 24px;
+  }
+
+  .sub {
+    font-size: 26px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+  }
+
+  .alert-badge {
+    position: absolute;
+    top: 80px; right: 80px;
+    background: #FF4757;
+    color: #FFF;
+    font-size: 22px; font-weight: 900;
+    padding: 12px 24px;
+    border-radius: 10px;
+    transform: rotate(3deg);
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <div class="bg-text">지원금</div>
+    <div class="alert-badge">2026년 최신</div>
+    <div class="icon-row">
+      <span class="icon-pill">청년</span>
+      <span class="icon-pill">소상공인</span>
+      <span class="icon-pill">출산/육아</span>
+    </div>
+    <div class="amount">최대 300만원</div>
+    <div class="amount-sub">모르면 못 받는 돈</div>
+    <h1 class="heading">2026 청년 지원금<br>TOP 5 총정리</h1>
+    <p class="sub">지금 바로 신청 가능한 것만 모았어요</p>
+  </div>
+</body>
+</html>
