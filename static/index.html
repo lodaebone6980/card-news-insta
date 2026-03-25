@@ -26,7 +26,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .sb-spacer{flex:1}
 
 /* ─── 메인 영역 ─── */
-.main{flex:1;max-width:560px;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.main{width:480px;min-width:360px;max-width:700px;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+
+/* ─── 리사이즈 핸들 ─── */
+.resize-handle{width:6px;cursor:col-resize;background:transparent;flex-shrink:0;position:relative;z-index:50;transition:background .15s}
+.resize-handle:hover,.resize-handle.active{background:var(--accent);opacity:.4}
 .main-header{padding:16px 28px 0;display:flex;align-items:center}
 .breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
 .bc-dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
@@ -374,6 +378,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
 
+  <!-- 리사이즈 핸들 -->
+  <div class="resize-handle" id="resizeHandle"></div>
+
   <!-- ═══ 폰 미리보기 ═══ -->
   <div class="phone-panel">
     <div style="display:flex;flex-direction:column;align-items:center">
@@ -587,13 +594,20 @@ async function startGenerate() {
         renderEditor();
       }, 800);
     } else {
-      alert(data.message || '생성 실패');
-      goPage('start');
+      showGenError(data.message || '생성 실패');
     }
   } catch(e) {
-    alert('생성 실패: ' + e.message);
-    goPage('start');
+    showGenError('생성 실패: ' + e.message);
   }
+}
+
+function showGenError(msg) {
+  const el = document.querySelector('.gen-progress');
+  el.innerHTML = `
+    <div style="color:var(--err);font-size:16px;font-weight:600;margin-bottom:12px">생성 중 오류 발생</div>
+    <div style="color:var(--dim);font-size:13px;margin-bottom:24px;max-width:400px;line-height:1.6">${msg}</div>
+    <button class="gen-btn" onclick="goPage('start')" style="max-width:200px;margin:0 auto">돌아가기</button>
+  `;
 }
 async function generateFromNews() {
   document.getElementById('inputText').value = '';
@@ -890,6 +904,31 @@ function showUrlInput() {
 
 // ═══ 날짜 포맷 ═══
 function fmtDate(s) { return (s||'').slice(0,16).replace('T',' ').replaceAll('-','.'); }
+
+// ═══ 리사이즈 ═══
+(function(){
+  const handle = document.getElementById('resizeHandle');
+  const main = document.querySelector('.main');
+  let dragging = false, startX = 0, startW = 0;
+  handle.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startW = main.offsetWidth;
+    handle.classList.add('active');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const w = Math.max(360, Math.min(700, startW + (e.clientX - startX)));
+    main.style.width = w + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
 
 // ═══ 초기화 ═══
 checkAuth();
