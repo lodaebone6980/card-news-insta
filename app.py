@@ -18,6 +18,7 @@ app = FastAPI(title="AI 카드뉴스 자동생성기")
 # 디렉토리 마운트
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
+app.mount("/samples", StaticFiles(directory=str(PROJECT_ROOT / "samples")), name="samples")
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="static")
 
 
@@ -177,3 +178,24 @@ async def get_session(session_name: str):
     pngs = [f"/output/{session_name}/{Path(p).name}" for p in data.get("png_paths", [])]
     data["png_urls"] = pngs
     return {"status": "ok", "data": data}
+
+
+@app.get("/api/samples", response_class=JSONResponse)
+async def list_samples():
+    """샘플 카드뉴스 목록"""
+    samples_dir = PROJECT_ROOT / "samples"
+    categories = {
+        "shopping": {"name": "쇼핑", "color": "#E74C3C", "desc": "가성비 꿀템, 핫딜, 추천 리스트"},
+        "fortune": {"name": "사주/운세", "color": "#1B1464", "desc": "띠별 운세, 타로, 별자리"},
+        "subsidy": {"name": "지원금", "color": "#2563EB", "desc": "청년 지원금, 정부 보조금 총정리"},
+    }
+    result = []
+    for cat_key, cat_info in categories.items():
+        cat_dir = samples_dir / cat_key
+        if cat_dir.exists():
+            pngs = sorted([
+                f"/samples/{cat_key}/{f.name}"
+                for f in cat_dir.glob("*.png")
+            ])
+            result.append({**cat_info, "key": cat_key, "slides": pngs})
+    return {"categories": result}

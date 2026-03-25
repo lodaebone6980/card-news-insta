@@ -561,12 +561,22 @@
     </div>
 
     <div class="tabs">
+      <button class="tab" onclick="showTab('samples')">샘플</button>
       <button class="tab active" onclick="showTab('brand')">브랜드</button>
       <button class="tab" onclick="showTab('generate')">생성</button>
       <button class="tab" onclick="showTab('history')">히스토리</button>
     </div>
 
     <!-- ── 브랜드 설정 ── -->
+    <!-- ── 샘플 갤러리 ── -->
+    <div id="panel-samples" class="panel">
+      <div class="card">
+        <h3>카테고리별 샘플 카드뉴스</h3>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">각 카테고리의 디자인 레퍼런스입니다. 클릭하면 오른쪽 폰 미리보기에서 확인할 수 있습니다.</p>
+        <div id="samplesArea"><p style="color:var(--text-dim);font-size:13px">로딩 중...</p></div>
+      </div>
+    </div>
+
     <div id="panel-brand" class="panel active">
       <div class="card">
         <h3><span class="icon">1</span> 브랜드 정보</h3>
@@ -790,10 +800,11 @@ let currentSlideIdx = 0;
 // ── 탭 ──
 function showTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['brand','generate','history'][i] === name);
+    t.classList.toggle('active', ['samples','brand','generate','history'][i] === name);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'samples') loadSamples();
   if (name === 'history') loadSessions();
   if (name === 'brand') loadBrand();
 }
@@ -1023,6 +1034,53 @@ async function viewSession(name) {
       const urls = data.data.png_urls || [];
       const topic = data.data.topic?.selected_topic || name;
       setSlides(urls, topic);
+    }
+  } catch(e) {}
+}
+
+// ── 샘플 갤러리 ──
+async function loadSamples() {
+  try {
+    const res = await fetch('/api/samples');
+    const data = await res.json();
+    const area = document.getElementById('samplesArea');
+
+    if (!data.categories || !data.categories.length) {
+      area.innerHTML = '<p style="color:var(--text-dim);font-size:13px">샘플이 없습니다.</p>';
+      return;
+    }
+
+    area.innerHTML = data.categories.map(cat => `
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:12px;height:12px;border-radius:50%;background:${cat.color}"></div>
+          <span style="font-size:16px;font-weight:700">${cat.name}</span>
+          <span style="font-size:12px;color:var(--text-dim)">${cat.desc}</span>
+        </div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0">
+          ${cat.slides.map(url => `
+            <img src="${url}"
+                 style="height:160px;border-radius:10px;cursor:pointer;flex-shrink:0;transition:transform 0.15s;border:1px solid var(--border)"
+                 onclick="loadSampleToPhone('${cat.key}','${cat.name}')"
+                 onmouseover="this.style.transform='scale(1.03)'"
+                 onmouseout="this.style.transform='scale(1)'"
+                 loading="lazy">
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('samplesArea').innerHTML = '<p style="color:var(--error);font-size:13px">로드 실패</p>';
+  }
+}
+
+async function loadSampleToPhone(catKey, catName) {
+  try {
+    const res = await fetch('/api/samples');
+    const data = await res.json();
+    const cat = data.categories.find(c => c.key === catKey);
+    if (cat && cat.slides.length) {
+      setSlides(cat.slides, catName + ' 샘플 카드뉴스');
     }
   } catch(e) {}
 }
