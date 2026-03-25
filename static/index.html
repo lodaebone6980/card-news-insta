@@ -5,1276 +5,776 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI 카드뉴스 자동생성기</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-
-  :root {
-    --primary: #7C3AED;
-    --primary-light: #F5F3FF;
-    --bg: #0A0A0B;
-    --surface: #141416;
-    --surface2: #1C1C20;
-    --surface3: #242428;
-    --text: #EAEAEB;
-    --text-dim: #7A7A80;
-    --border: #2A2A2E;
-    --success: #34C759;
-    --error: #FF453A;
-    --warning: #FFD60A;
-    --radius: 14px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Noto Sans KR', -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── 메인 레이아웃: 좌 컨트롤 + 우 폰 미리보기 ── */
-  .layout {
-    display: flex;
-    min-height: 100vh;
-  }
-
-  .left-panel {
-    flex: 1;
-    max-width: 580px;
-    min-width: 380px;
-    padding: 32px 28px;
-    overflow-y: auto;
-    height: 100vh;
-    border-right: 1px solid var(--border);
-  }
-
-  .right-panel {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(160deg, #0F0F12 0%, #1A1028 50%, #0F0F12 100%);
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  /* ── 헤더 ── */
-  .header {
-    margin-bottom: 28px;
-  }
-
-  .header h1 {
-    font-size: 22px;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--primary), #A78BFA, #C4B5FD);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 4px;
-  }
-
-  .header p {
-    color: var(--text-dim);
-    font-size: 13px;
-  }
-
-  /* ── 탭 ── */
-  .tabs {
-    display: flex;
-    gap: 2px;
-    background: var(--surface);
-    padding: 3px;
-    border-radius: 10px;
-    margin-bottom: 24px;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 10px;
-    text-align: center;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dim);
-    transition: all 0.2s;
-    border: none;
-    background: none;
-  }
-
-  .tab.active { background: var(--primary); color: white; }
-  .tab:hover:not(.active) { color: var(--text); }
-
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  /* ── 카드/폼 ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 22px;
-    margin-bottom: 16px;
-  }
-
-  .card h3 {
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .card h3 .icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background: rgba(124,58,237,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-  }
-
-  .form-group { margin-bottom: 16px; }
-  .form-group:last-child { margin-bottom: 0; }
-
-  label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  input, select, textarea {
-    width: 100%;
-    padding: 10px 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  input:focus, textarea:focus { border-color: var(--primary); }
-  textarea { resize: vertical; min-height: 60px; }
-
-  /* ── 컬러 피커 ── */
-  .color-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .color-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    border-radius: 8px;
-    border: 2px solid var(--border);
-    cursor: pointer;
-    transition: all 0.15s;
-    background: var(--surface2);
-  }
-
-  .color-chip:hover { border-color: var(--text-dim); }
-  .color-chip.sel { border-color: var(--primary); background: rgba(124,58,237,0.08); }
-
-  .color-dot {
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  }
-
-  .color-chip span { font-size: 11px; font-weight: 600; }
-
-  /* ── 라디오 그룹 ── */
-  .radio-list { display: flex; flex-direction: column; gap: 6px; }
-
-  .radio-pill {
-    padding: 11px 14px;
-    background: var(--surface2);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .radio-pill:hover { border-color: var(--text-dim); }
-  .radio-pill.sel { border-color: var(--primary); background: rgba(124,58,237,0.08); }
-  .radio-pill .t { font-size: 13px; font-weight: 600; }
-  .radio-pill .d { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-
-  /* ── 버튼 ── */
-  .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 13px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    font-family: inherit;
-    transition: all 0.2s;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, var(--primary), #6D28D9);
-    color: white;
-    box-shadow: 0 4px 16px rgba(124,58,237,0.3);
-  }
-
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.4); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  .status-msg {
-    padding: 12px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-top: 12px;
-    display: none;
-  }
-
-  .status-msg.show { display: block; }
-  .status-msg.ok { background: rgba(52,199,89,0.1); color: var(--success); }
-  .status-msg.err { background: rgba(255,69,58,0.1); color: var(--error); }
-  .status-msg.load { background: rgba(124,58,237,0.1); color: #A78BFA; }
-
-  /* ── 파이프라인 스텝 ── */
-  .steps { margin-top: 14px; }
-
-  .step-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    font-size: 12px;
-    color: var(--text-dim);
-    transition: color 0.3s;
-  }
-
-  .step-row.on { color: var(--primary); font-weight: 600; }
-  .step-row.ok { color: var(--success); }
-
-  .step-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: background 0.3s;
-    flex-shrink: 0;
-  }
-
-  .step-row.on .step-dot { background: var(--primary); box-shadow: 0 0 8px rgba(124,58,237,0.5); }
-  .step-row.ok .step-dot { background: var(--success); }
-
-  /* ── 히스토리 ── */
-  .session-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 14px;
-    background: var(--surface2);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: background 0.15s;
-    font-size: 13px;
-  }
-
-  .session-row:hover { background: var(--surface3); }
-
-  /* ━━━━━━━━━━━ 폰 목업 (오른쪽 패널) ━━━━━━━━━━━ */
-  .phone-wrap {
-    position: relative;
-    width: 320px;
-  }
-
-  .phone-frame {
-    width: 320px;
-    height: 650px;
-    border-radius: 40px;
-    border: 3px solid #3A3A3E;
-    background: #000;
-    overflow: hidden;
-    position: relative;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.05),
-      0 20px 60px rgba(0,0,0,0.5),
-      0 0 120px rgba(124,58,237,0.08);
-  }
-
-  /* 노치 */
-  .phone-notch {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 28px;
-    background: #000;
-    border-radius: 0 0 18px 18px;
-    z-index: 10;
-  }
-
-  .phone-notch::after {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #1A1A1E;
-  }
-
-  /* 인스타 헤더 */
-  .insta-header {
-    height: 44px;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
-    padding-top: 28px;
-    box-sizing: content-box;
-  }
-
-  .insta-user {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .insta-avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), #E040FB);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 900;
-    color: white;
-  }
-
-  .insta-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: white;
-  }
-
-  .insta-dots {
-    font-size: 16px;
-    color: white;
-    letter-spacing: 2px;
-  }
-
-  /* 슬라이드 영역 */
-  .insta-body {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1080/1350;
-    background: var(--surface);
-    overflow: hidden;
-  }
-
-  .insta-body img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .insta-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-dim);
-    font-size: 12px;
-    gap: 8px;
-    background: linear-gradient(160deg, #1A1028, #0F0F12);
-  }
-
-  .insta-placeholder .ph-icon {
-    font-size: 36px;
-    opacity: 0.3;
-  }
-
-  /* 슬라이드 네비게이션 */
-  .slide-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 26px; height: 26px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    border: none;
-    color: white;
-    font-size: 13px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 5;
-    transition: background 0.2s;
-  }
-
-  .slide-nav:hover { background: rgba(255,255,255,0.35); }
-  .slide-nav.prev { left: 6px; }
-  .slide-nav.next { right: 6px; }
-  .slide-nav.visible { display: flex; }
-
-  /* 인디케이터 */
-  .insta-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    padding: 8px 0;
-    background: #000;
-  }
-
-  .insta-ind {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #3A3A3E;
-    transition: all 0.2s;
-  }
-
-  .insta-ind.active {
-    background: #3897F0;
-    width: 6px;
-  }
-
-  /* 인스타 액션바 */
-  .insta-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    background: #000;
-  }
-
-  .insta-actions-left {
-    display: flex;
-    gap: 14px;
-  }
-
-  .insta-icon {
-    width: 22px;
-    height: 22px;
-    fill: none;
-    stroke: white;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .insta-caption {
-    padding: 0 14px 10px;
-    background: #000;
-    font-size: 11px;
-    color: #AAAAAA;
-    line-height: 1.4;
-  }
-
-  .insta-caption strong {
-    color: white;
-    font-weight: 700;
-  }
-
-  /* ── 반응형 ── */
-  @media (max-width: 900px) {
-    .layout { flex-direction: column; }
-    .left-panel {
-      max-width: 100%;
-      min-width: 0;
-      height: auto;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-    }
-    .right-panel {
-      position: relative;
-      height: auto;
-      padding: 40px 20px;
-    }
-  }
-
-  /* ── 스피너 ── */
-  .spinner {
-    display: inline-block;
-    width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,0.2);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* 슬라이드 그리드 (히스토리) */
-  .slides-row {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 8px 0;
-  }
-
-  .slides-row img {
-    height: 120px;
-    border-radius: 8px;
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: transform 0.15s;
-  }
-
-  .slides-row img:hover { transform: scale(1.05); }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+:root{
+  --bg:#0C0C0E;--surface:#141417;--surface2:#1A1A1E;--surface3:#222226;
+  --border:#2A2A2E;--text:#E8E8EA;--dim:#6E6E76;--accent:#4AEDC4;
+  --accent2:#3BD4AE;--err:#FF453A;--ok:#34C759;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+
+/* ═══ 전체 레이아웃: 사이드바 + 메인 + 폰 ═══ */
+.app{display:flex;height:100vh}
+
+/* ─── 사이드바 ─── */
+.sidebar{width:56px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:8px;flex-shrink:0}
+.sb-btn{width:40px;height:40px;border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--dim);background:transparent;transition:all .15s}
+.sb-btn:hover{background:var(--surface2);color:var(--text)}
+.sb-btn.active{background:var(--accent);color:#000}
+.sb-btn.plus{background:var(--accent);color:#000;font-size:22px;font-weight:700;margin-bottom:12px}
+.sb-spacer{flex:1}
+
+/* ─── 메인 영역 ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.main-header{padding:20px 32px 0;display:flex;justify-content:space-between;align-items:center}
+.breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.bc-dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.bc-dot.done{background:var(--ok)}
+.bc-dot.active{background:var(--accent)}
+.bc-label{font-size:12px}
+.bc-line{width:20px;height:1px;background:var(--border)}
+.new-btn{font-size:13px;color:var(--dim);background:none;border:none;cursor:pointer}
+.new-btn:hover{color:var(--text)}
+
+.main-body{flex:1;overflow-y:auto;padding:24px 32px 32px}
+
+/* ─── 페이지: 시작 ─── */
+.page{display:none}.page.active{display:block}
+.page-title{font-size:24px;font-weight:700;margin-bottom:8px}
+.page-desc{font-size:14px;color:var(--dim);margin-bottom:32px}
+
+.start-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px}
+.start-card h4{font-size:15px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.start-card h4 .ico{color:var(--accent)}
+.start-card p{font-size:13px;color:var(--dim);margin-bottom:16px}
+.start-card textarea{width:100%;height:80px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;padding:14px;font-family:inherit;resize:none;outline:none}
+.start-card textarea:focus{border-color:var(--accent)}
+
+.gen-btn{width:100%;padding:16px;background:var(--accent);color:#000;font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.gen-btn:hover{opacity:.9}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.start-option{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:18px 24px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .15s}
+.start-option:hover{border-color:var(--accent)}
+.start-option .left{display:flex;align-items:center;gap:12px}
+.start-option .ico{font-size:18px;color:var(--accent)}
+.start-option .t{font-size:14px;font-weight:500}
+.start-option .d{font-size:12px;color:var(--dim)}
+.start-option .arrow{color:var(--dim);font-size:14px}
+
+/* ─── 페이지: 생성 중 ─── */
+.gen-progress{text-align:center;padding-top:80px}
+.gen-progress h3{font-size:20px;font-weight:700;margin-bottom:8px}
+.gen-progress p{font-size:14px;color:var(--dim);margin-bottom:32px}
+.gen-steps{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:28px}
+.gen-step{text-align:center}
+.gen-step .circle{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:14px;color:var(--dim);transition:all .3s}
+.gen-step .circle.active{border-color:var(--accent);color:var(--accent);box-shadow:0 0 12px rgba(74,237,196,.2)}
+.gen-step .circle.done{border-color:var(--ok);background:var(--ok);color:#000}
+.gen-step .label{font-size:12px;color:var(--dim)}
+.gen-step .label.active{color:var(--accent)}
+.gen-step .label.done{color:var(--ok)}
+.gen-line{width:40px;height:2px;background:var(--border);margin-bottom:20px}
+.gen-line.done{background:var(--ok)}
+.gen-bar{width:300px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px;overflow:hidden}
+.gen-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s;width:0}
+.gen-cancel{font-size:13px;color:var(--dim);background:none;border:none;cursor:pointer;margin-bottom:16px}
+.gen-log{font-size:12px;color:var(--dim);cursor:pointer}
+
+/* ─── 페이지: 편집 ─── */
+.edit-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.edit-btn{padding:10px 18px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;background:var(--surface2);color:var(--dim);transition:all .15s}
+.edit-btn:hover{color:var(--text);background:var(--surface3)}
+.edit-btn.primary{background:var(--accent);color:#000}
+.edit-spacer{flex:1}
+
+.slide-nav-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px;color:var(--dim)}
+.slide-type-label{font-weight:600;color:var(--text)}
+.sn-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--dim);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.sn-btn:hover{color:var(--text);border-color:var(--dim)}
+
+.editor-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:28px}
+.ed-field{margin-bottom:20px}
+.ed-label{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:8px}
+.ed-input{width:100%;background:transparent;border:none;color:var(--text);font-size:15px;font-family:inherit;outline:none;padding:4px 0;border-bottom:1px solid transparent}
+.ed-input:focus{border-bottom-color:var(--accent)}
+.ed-textarea{width:100%;background:transparent;border:none;color:var(--text);font-size:15px;font-family:inherit;outline:none;resize:none;min-height:50px;padding:4px 0}
+
+.preset-row{display:flex;gap:8px;margin-bottom:16px}
+.preset-chip{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--dim);transition:all .15s}
+.preset-chip:hover{border-color:var(--dim)}
+.preset-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(74,237,196,.06)}
+
+.layout-grid{display:grid;grid-template-columns:repeat(3,28px);gap:4px}
+.layout-dot{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s}
+.layout-dot:hover{border-color:var(--dim)}
+.layout-dot.active{background:var(--text);border-color:var(--text)}
+
+.img-actions{display:flex;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.img-btn{font-size:12px;color:var(--dim);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:6px}
+.img-btn:hover{color:var(--text)}
+
+.bottom-actions{display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.ba-btn{font-size:12px;color:var(--dim);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px}
+.ba-btn:hover{color:var(--text)}
+
+/* ─── 페이지: 작업목록 ─── */
+.work-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.work-item{cursor:pointer;transition:transform .15s}
+.work-item:hover{transform:translateY(-2px)}
+.work-thumb{width:100%;aspect-ratio:4/5;background:var(--surface2);border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:8px}
+.work-thumb img{width:100%;height:100%;object-fit:cover}
+.work-title{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.work-date{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* ═══ 오른쪽: 폰 미리보기 ═══ */
+.phone-panel{width:380px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0E0E11,#151520,#0E0E11);flex-shrink:0;position:relative}
+.phone-frame{width:300px;height:620px;border-radius:36px;border:3px solid #333;background:#000;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 100px rgba(74,237,196,.03)}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:10}
+.phone-notch::after{content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#1A1A1E}
+.phone-status{position:absolute;top:4px;left:16px;right:16px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#FFF;z-index:11}
+
+.insta-header{height:42px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 14px;padding-top:26px;box-sizing:content-box}
+.insta-user{display:flex;align-items:center;gap:8px}
+.insta-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);display:flex;align-items:center;justify-content:center;padding:2px}
+.insta-avatar-inner{width:100%;height:100%;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--accent)}
+.insta-name{font-size:12px;font-weight:600;color:#FFF}
+.insta-dots{color:#FFF;font-size:16px;letter-spacing:2px}
+
+.insta-body{width:100%;aspect-ratio:4/5;background:#111;position:relative;overflow:hidden}
+.insta-body img{width:100%;height:100%;object-fit:cover;display:block}
+.insta-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555;font-size:12px;gap:6px}
+.insta-placeholder .ph{font-size:14px;color:var(--dim)}
+
+.slide-nav-arrow{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);border:none;color:#FFF;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5}
+.slide-nav-arrow:hover{background:rgba(255,255,255,.3)}
+.slide-nav-arrow.prev{left:6px}
+.slide-nav-arrow.next{right:6px}
+.slide-nav-arrow.show{display:flex}
+
+.insta-indicators{display:flex;justify-content:center;gap:4px;padding:6px 0;background:#000}
+.insta-ind{width:6px;height:6px;border-radius:50%;background:#333;transition:all .2s}
+.insta-ind.on{background:#3897F0}
+
+.insta-actions{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#000}
+.insta-left{display:flex;gap:14px}
+.insta-icon{width:20px;height:20px;fill:none;stroke:#FFF;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.insta-likes{padding:2px 14px 8px;background:#000;font-size:12px;font-weight:600;color:#FFF}
+
+/* 하단 페이지 네비 */
+.phone-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 0;font-size:13px;color:var(--dim)}
+.pn-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--dim);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.pn-btn:hover{color:var(--text);border-color:var(--dim)}
+
+/* ─── 로그인 모달 ─── */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;width:360px}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:20px}
+.modal input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:var(--accent)}
+.modal-err{color:var(--err);font-size:12px;margin-bottom:12px;display:none}
+.modal .gen-btn{margin-bottom:8px}
+.modal .cancel-btn{width:100%;padding:12px;background:var(--surface2);color:var(--dim);border:none;border-radius:10px;cursor:pointer;font-size:14px;font-family:inherit}
+
+/* ─── 풀스크린 프리뷰 ─── */
+.fullscreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:200;align-items:center;justify-content:center;flex-direction:column}
+.fullscreen.show{display:flex}
+.fs-close{position:absolute;top:20px;right:24px;font-size:24px;color:var(--dim);background:none;border:none;cursor:pointer}
+.fs-page{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:14px;color:var(--dim)}
+.fs-img{max-height:80vh;max-width:90vw;border-radius:12px}
+.fs-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#FFF;font-size:20px;cursor:pointer}
+.fs-nav:hover{background:rgba(255,255,255,.2)}
+.fs-nav.prev{left:24px}
+.fs-nav.next{right:24px}
+.fs-zoom{position:absolute;bottom:24px;display:flex;gap:8px;align-items:center;color:var(--dim);font-size:13px}
+
+/* ─── 유틸 ─── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#FFF;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .phone-panel{display:none}
+  .sidebar{width:48px}
+}
 </style>
 </head>
 <body>
 
-<div class="layout">
-  <!-- ════ 왼쪽: 컨트롤 패널 ════ -->
-  <div class="left-panel">
-    <!-- 로그인 바 -->
-    <div id="authBar" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:12px;font-size:13px">
-      <span id="authUser" style="color:var(--text-dim)"></span>
-      <button id="loginBtn" class="btn" onclick="showLogin()" style="width:auto;padding:8px 16px;font-size:12px;background:var(--surface2);color:var(--text)">로그인</button>
-      <button id="logoutBtn" class="btn" onclick="doLogout()" style="width:auto;padding:8px 16px;font-size:12px;background:var(--surface2);color:var(--text);display:none">로그아웃</button>
+<div class="app">
+  <!-- ═══ 사이드바 ═══ -->
+  <div class="sidebar">
+    <button class="sb-btn plus" onclick="goPage('start')" title="새로 만들기">+</button>
+    <button class="sb-btn" id="sbWork" onclick="goPage('worklist')" title="작업목록">&#128196;</button>
+    <button class="sb-btn" id="sbHistory" onclick="goPage('history')" title="히스토리">&#128194;</button>
+    <button class="sb-btn" id="sbAdmin" onclick="goPage('admin')" title="관리" style="display:none">&#9881;</button>
+    <div class="sb-spacer"></div>
+    <button class="sb-btn" id="sbAuth" onclick="toggleAuth()" title="로그인">&#128100;</button>
+  </div>
+
+  <!-- ═══ 메인 ═══ -->
+  <div class="main">
+    <div class="main-header">
+      <div class="breadcrumb" id="breadcrumb">
+        <div class="bc-dot active"></div><span class="bc-label">시작</span>
+      </div>
+      <button class="new-btn" onclick="goPage('start')">+ 새로 만들기</button>
     </div>
+    <div class="main-body">
 
-    <!-- 로그인 모달 -->
-    <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center">
-      <div class="card" style="width:360px;margin:0">
-        <h3>로그인</h3>
-        <div class="form-group">
-          <label>아이디</label>
-          <input id="loginId" placeholder="아이디 입력" onkeydown="if(event.key==='Enter')doLogin()">
+      <!-- 시작 페이지 -->
+      <div class="page active" id="page-start">
+        <h2 class="page-title">카드뉴스 만들기</h2>
+        <p class="page-desc">카드뉴스를 만들 내용을 준비하세요</p>
+
+        <div class="start-card">
+          <h4><span class="ico">&#128196;</span> 텍스트 붙여넣기</h4>
+          <p>블로그 글, 기사, 제안 등 원하는 텍스트를 자유롭게 붙여넣으세요</p>
+          <textarea id="inputText" placeholder="카드뉴스로 만들 내용을 입력하세요..."></textarea>
+          <div style="height:12px"></div>
+          <button class="gen-btn" id="mainGenBtn" onclick="startGenerate()">카드뉴스 만들기</button>
         </div>
-        <div class="form-group">
-          <label>비밀번호</label>
-          <input id="loginPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+
+        <div class="start-card">
+          <h4><span class="ico">&#10024;</span> 예시로 시작하기</h4>
+          <p>샘플 카드뉴스를 통해 결과를 먼저 확인해보세요</p>
+          <div class="start-option" onclick="goPage('worklist')">
+            <div class="left"><span class="t">예시 둘러보기</span></div>
+            <span class="arrow">&#8250;</span>
+          </div>
         </div>
-        <div id="loginError" style="color:var(--error);font-size:12px;margin-bottom:12px;display:none"></div>
-        <button class="btn btn-primary" onclick="doLogin()">로그인</button>
-        <button class="btn" onclick="hideLogin()" style="margin-top:8px;background:var(--surface2);color:var(--text-dim)">취소</button>
-      </div>
-    </div>
 
-    <div class="header">
-      <h1>AI Card News Generator</h1>
-      <p>RSS 뉴스 → AI 자동 인스타 카드뉴스</p>
-    </div>
-
-    <div class="tabs" id="mainTabs">
-      <button class="tab" onclick="showTab('samples')">샘플</button>
-      <button class="tab active" onclick="showTab('brand')">브랜드</button>
-      <button class="tab" onclick="showTab('generate')">생성</button>
-      <button class="tab" onclick="showTab('history')">히스토리</button>
-      <button class="tab" id="adminTab" onclick="showTab('admin')" style="display:none">관리</button>
-    </div>
-
-    <!-- ── 브랜드 설정 ── -->
-    <!-- ── 샘플 갤러리 ── -->
-    <div id="panel-samples" class="panel">
-      <div class="card">
-        <h3>카테고리별 샘플 카드뉴스</h3>
-        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">각 카테고리의 디자인 레퍼런스입니다. 클릭하면 오른쪽 폰 미리보기에서 확인할 수 있습니다.</p>
-        <div id="samplesArea"><p style="color:var(--text-dim);font-size:13px">로딩 중...</p></div>
-      </div>
-    </div>
-
-    <div id="panel-brand" class="panel active">
-      <div class="card">
-        <h3><span class="icon">1</span> 브랜드 정보</h3>
-        <div class="form-group">
-          <label>브랜드명</label>
-          <input id="brand_name" placeholder="예: AI트렌드" oninput="updatePreview()">
+        <div class="start-option" onclick="generateFromNews()">
+          <div class="left">
+            <span class="ico">&#127760;</span>
+            <div><div class="t">오늘의 뉴스 가져오기</div><div class="d">RSS에서 최신 뉴스를 수집하여 카드뉴스를 만들어요</div></div>
+          </div>
+          <span class="arrow">&#8250;</span>
         </div>
-        <div class="form-group">
-          <label>인스타그램 핸들</label>
-          <input id="instagram_handle" placeholder="예: @my.brand" oninput="updatePreview()">
+
+        <div class="start-option" onclick="goPage('brand')">
+          <div class="left">
+            <span class="ico">&#127912;</span>
+            <div><div class="t">브랜드 설정</div><div class="d">컬러, 톤앤매너, CTA를 설정하세요</div></div>
+          </div>
+          <span class="arrow">&#8250;</span>
         </div>
       </div>
 
-      <div class="card">
-        <h3><span class="icon">2</span> 브랜드 컬러</h3>
-        <div class="color-grid" id="colorGrid">
-          <div class="color-chip sel" data-main="#7C3AED" data-sub="#F5F3FF" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#7C3AED"></div><span>바이올렛</span>
+      <!-- 생성 중 페이지 -->
+      <div class="page" id="page-generating">
+        <div class="gen-progress">
+          <h3>AI가 카드뉴스를 만들고 있어요</h3>
+          <p>잠시만 기다려주세요</p>
+          <div class="gen-steps">
+            <div class="gen-step"><div class="circle active" id="gc1">1</div><div class="label active" id="gl1">카드뉴스 기획</div></div>
+            <div class="gen-line" id="gline1"></div>
+            <div class="gen-step"><div class="circle" id="gc2">2</div><div class="label" id="gl2">카피 작성</div></div>
           </div>
-          <div class="color-chip" data-main="#2563EB" data-sub="#EFF6FF" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#2563EB"></div><span>오션블루</span>
-          </div>
-          <div class="color-chip" data-main="#059669" data-sub="#ECFDF5" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#059669"></div><span>에메랄드</span>
-          </div>
-          <div class="color-chip" data-main="#E11D48" data-sub="#FFF1F2" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#E11D48"></div><span>코랄핑크</span>
-          </div>
-          <div class="color-chip" data-main="#D97706" data-sub="#FFFBEB" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#D97706"></div><span>앰버골드</span>
-          </div>
-          <div class="color-chip" data-main="#334155" data-sub="#F8FAFC" onclick="pickColor(this)">
-            <div class="color-dot" style="background:#334155"></div><span>슬레이트</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <div class="form-group" style="flex:1;margin-bottom:0">
-            <label>커스텀 메인</label>
-            <input id="custom_main" placeholder="#HEX" oninput="updatePreview()">
-          </div>
-          <div class="form-group" style="flex:1;margin-bottom:0">
-            <label>커스텀 서브</label>
-            <input id="custom_sub" placeholder="#HEX">
-          </div>
+          <div class="gen-bar"><div class="gen-bar-fill" id="genBarFill"></div></div>
+          <button class="gen-cancel" onclick="goPage('start')">&#10005; 취소</button><br>
+          <span class="gen-log" id="genLog">&#9881; CLI 로그 보기</span>
         </div>
       </div>
 
-      <div class="card">
-        <h3><span class="icon">3</span> 타겟 독자</h3>
-        <div class="form-group">
-          <label>연령대</label>
-          <input id="target_age" placeholder="예: 25~35세">
+      <!-- 편집 페이지 -->
+      <div class="page" id="page-edit">
+        <h2 class="page-title">편집</h2>
+        <p class="page-desc">각 슬라이드의 텍스트를 수정하세요</p>
+
+        <div class="edit-toolbar">
+          <button class="edit-btn" onclick="saveCurrentEdit()">&#128190; 저장</button>
+          <button class="edit-btn" onclick="goPage('start')">&#8634; 다시 생성</button>
+          <div class="edit-spacer"></div>
+          <button class="edit-btn primary" onclick="exportPNG()">&#128248; 내보내기 (PNG)</button>
         </div>
-        <div class="form-group">
-          <label>직업/관심사</label>
-          <input id="target_interest" placeholder="예: IT 직장인, AI에 관심 있는">
+
+        <div class="slide-nav-bar">
+          <span class="slide-type-label" id="editSlideType">커버</span>
+          <div style="flex:1"></div>
+          <button class="sn-btn" onclick="addSlide()">+</button>
+          <button class="sn-btn" onclick="navEditSlide(-1)">&#8249;</button>
+          <span id="editSlideNum">1 / 7</span>
+          <button class="sn-btn" onclick="navEditSlide(1)">&#8250;</button>
         </div>
-        <div class="form-group">
-          <label>고민/니즈</label>
-          <input id="target_needs" placeholder="예: AI 트렌드를 파악하고 싶지만 시간 부족">
+
+        <div class="editor-card" id="editorCard">
+          <!-- 동적 생성 -->
         </div>
       </div>
 
-      <div class="card">
-        <h3><span class="icon">4</span> 콘텐츠 목표</h3>
-        <div class="radio-list" id="goalGroup">
-          <div class="radio-pill sel" data-value="정보 전달 — 트렌드/뉴스 큐레이션" onclick="pick(this,'goalGroup')">
-            <div class="t">정보 전달 (AI 추천)</div>
-            <div class="d">저장/공유율 높음, 팔로워 확보에 효과적</div>
-          </div>
-          <div class="radio-pill" data-value="교육/가이드 — How-to, 실전 팁" onclick="pick(this,'goalGroup')">
-            <div class="t">교육/가이드</div><div class="d">전문성 구축, 높은 저장율</div>
-          </div>
-          <div class="radio-pill" data-value="브랜드 인지도 — 전문성 어필" onclick="pick(this,'goalGroup')">
-            <div class="t">브랜드 인지도</div><div class="d">개인 브랜딩/포트폴리오</div>
-          </div>
-          <div class="radio-pill" data-value="커뮤니티 빌딩 — 공감/소통" onclick="pick(this,'goalGroup')">
-            <div class="t">커뮤니티 빌딩</div><div class="d">댓글 유도, 충성 팔로워</div>
-          </div>
+      <!-- 브랜드 설정 페이지 -->
+      <div class="page" id="page-brand">
+        <h2 class="page-title">브랜드 설정</h2>
+        <p class="page-desc">카드뉴스의 브랜드 아이덴티티를 설정하세요</p>
+        <div class="start-card">
+          <div class="ed-field"><div class="ed-label">브랜드명</div><input class="ed-input" id="bBrand" placeholder="예: AI트렌드"></div>
+          <div class="ed-field"><div class="ed-label">인스타그램 핸들</div><input class="ed-input" id="bHandle" placeholder="예: @my.brand"></div>
+          <div class="ed-field"><div class="ed-label">메인 컬러</div><input class="ed-input" id="bMainColor" placeholder="#7C3AED"></div>
+          <div class="ed-field"><div class="ed-label">서브 컬러</div><input class="ed-input" id="bSubColor" placeholder="#F5F3FF"></div>
+          <div class="ed-field"><div class="ed-label">타겟 독자</div><input class="ed-input" id="bTarget" placeholder="예: 25~35세 IT 직장인"></div>
+          <div class="ed-field"><div class="ed-label">톤앤매너</div><input class="ed-input" id="bTone" placeholder="예: 친근한 친구"></div>
+          <div class="ed-field"><div class="ed-label">CTA 문구</div><input class="ed-input" id="bCta" placeholder="예: 팔로우하면 매일 트렌드를 받아볼 수 있어요"></div>
+          <button class="gen-btn" onclick="saveBrand()">브랜드 설정 저장</button>
+          <div id="brandMsg" style="margin-top:12px;font-size:13px;display:none"></div>
         </div>
       </div>
 
-      <div class="card">
-        <h3><span class="icon">5</span> 톤앤매너</h3>
-        <div class="radio-list" id="toneGroup">
-          <div class="radio-pill sel" data-value="친근한 친구" onclick="pick(this,'toneGroup')">
-            <div class="t">친근한 친구</div><div class="d">"~거든요", "~인 셈이에요"</div>
-          </div>
-          <div class="radio-pill" data-value="전문가" onclick="pick(this,'toneGroup')">
-            <div class="t">전문가</div><div class="d">"~입니다", "~되었습니다"</div>
-          </div>
-          <div class="radio-pill" data-value="캐주얼" onclick="pick(this,'toneGroup')">
-            <div class="t">캐주얼</div><div class="d">"~임", "솔직히 이건"</div>
-          </div>
-          <div class="radio-pill" data-value="스토리텔러" onclick="pick(this,'toneGroup')">
-            <div class="t">스토리텔러</div><div class="d">"~했어요", "~더라고요"</div>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:10px">
-          <label>또는 직접 입력</label>
-          <input id="custom_tone" placeholder="예: 존댓말 + 유머러스하게">
-        </div>
+      <!-- 작업목록 -->
+      <div class="page" id="page-worklist">
+        <h2 class="page-title">작업목록</h2>
+        <div class="work-grid" id="workGrid"></div>
       </div>
 
-      <div class="card">
-        <h3><span class="icon">6</span> CTA 문구</h3>
-        <div class="radio-list" id="ctaGroup">
-          <div class="radio-pill sel" data-value="팔로우하면 매일 트렌드를 받아볼 수 있어요" onclick="pick(this,'ctaGroup')">
-            <div class="t">팔로우하면 매일 트렌드를 받아볼 수 있어요</div>
+      <!-- 히스토리 -->
+      <div class="page" id="page-history">
+        <h2 class="page-title">히스토리</h2>
+        <p class="page-desc">Supabase에 저장된 카드뉴스 기록</p>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- 어드민 -->
+      <div class="page" id="page-admin">
+        <h2 class="page-title">관리</h2>
+        <div class="start-card">
+          <h4>회원 관리</h4>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input class="ed-input" id="newU" placeholder="아이디" style="flex:1">
+            <input class="ed-input" id="newP" placeholder="비밀번호" type="password" style="flex:1">
+            <button class="gen-btn" onclick="addUser()" style="width:auto;padding:10px 20px;font-size:12px">추가</button>
           </div>
-          <div class="radio-pill" data-value="저장해두고 나중에 다시 보세요" onclick="pick(this,'ctaGroup')">
-            <div class="t">저장해두고 나중에 다시 보세요</div>
-          </div>
-          <div class="radio-pill" data-value="궁금한 점은 DM으로 물어보세요" onclick="pick(this,'ctaGroup')">
-            <div class="t">궁금한 점은 DM으로 물어보세요</div>
-          </div>
-          <div class="radio-pill" data-value="이 글이 도움됐다면 친구에게 공유해주세요" onclick="pick(this,'ctaGroup')">
-            <div class="t">이 글이 도움됐다면 친구에게 공유해주세요</div>
-          </div>
+          <div id="userList"></div>
         </div>
-        <div class="form-group" style="margin-top:10px">
-          <label>또는 직접 입력</label>
-          <input id="custom_cta" placeholder="CTA 문구 직접 입력">
+        <div class="start-card">
+          <h4>접속 기록</h4>
+          <div id="logList" style="max-height:300px;overflow-y:auto"></div>
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="saveBrand()">브랜드 설정 저장</button>
-      <div id="brandStatus" class="status-msg"></div>
-    </div>
-
-    <!-- ── 생성하기 ── -->
-    <div id="panel-generate" class="panel">
-      <div class="card">
-        <h3>카드뉴스 생성</h3>
-        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;line-height:1.6">
-          브랜드 설정 완료 후 버튼을 누르면<br>
-          RSS 크롤링 → AI 기획 → 작성 → 이미지 생성 → PNG 출력까지 자동 진행됩니다.
-        </p>
-        <button id="genBtn" class="btn btn-primary" onclick="startGen()">카드뉴스 생성 시작</button>
-        <div id="genStatus" class="status-msg"></div>
-        <div class="steps" id="stepsArea" style="display:none">
-          <div class="step-row" id="s1"><div class="step-dot"></div>RSS 크롤링</div>
-          <div class="step-row" id="s2"><div class="step-dot"></div>주제 선정 (Gemini Flash)</div>
-          <div class="step-row" id="s3"><div class="step-dot"></div>기획안 작성 (Gemini Flash)</div>
-          <div class="step-row" id="s4"><div class="step-dot"></div>리서치 (Gemini Pro + Search)</div>
-          <div class="step-row" id="s5"><div class="step-dot"></div>텍스트 작성 (Gemini Pro)</div>
-          <div class="step-row" id="s6"><div class="step-dot"></div>AI 이미지 생성</div>
-          <div class="step-row" id="s7"><div class="step-dot"></div>HTML → PNG 렌더링</div>
-        </div>
-      </div>
-
-      <div id="resultCard" class="card" style="display:none">
-        <h3 id="resultTopic"></h3>
-        <div class="slides-row" id="resultSlides"></div>
-      </div>
-    </div>
-
-    <!-- ── 히스토리 ── -->
-    <div id="panel-history" class="panel">
-      <div class="card">
-        <h3>생성 히스토리 (Supabase)</h3>
-        <div id="historyList"><p style="color:var(--text-dim);font-size:13px">로딩 중...</p></div>
-      </div>
-    </div>
-
-    <!-- ── 어드민 (로그인한 admin만 보임) ── -->
-    <div id="panel-admin" class="panel">
-      <div class="card">
-        <h3>회원 관리</h3>
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <input id="newUser" placeholder="아이디" style="flex:1">
-          <input id="newPw" placeholder="비밀번호" type="password" style="flex:1">
-          <select id="newRole" style="width:80px"><option value="user">user</option><option value="admin">admin</option></select>
-          <button class="btn btn-primary" onclick="addUser()" style="width:auto;padding:10px 16px;font-size:12px">추가</button>
-        </div>
-        <div id="userList"></div>
-      </div>
-      <div class="card">
-        <h3>접속 기록</h3>
-        <div id="logList" style="max-height:400px;overflow-y:auto"></div>
-      </div>
     </div>
   </div>
 
-  <!-- ════ 오른쪽: 폰 미리보기 ════ -->
-  <div class="right-panel">
-    <div class="phone-wrap">
+  <!-- ═══ 폰 미리보기 ═══ -->
+  <div class="phone-panel">
+    <div style="display:flex;flex-direction:column;align-items:center">
       <div class="phone-frame">
-        <!-- 노치 -->
         <div class="phone-notch"></div>
-
-        <!-- 인스타 헤더 -->
+        <div class="phone-status"><span>9:41</span><span>&#9632;&#9632;&#9632;</span></div>
         <div class="insta-header">
           <div class="insta-user">
-            <div class="insta-avatar" id="phoneAvatar">A</div>
-            <span class="insta-name" id="phoneName">brand</span>
+            <div class="insta-avatar"><div class="insta-avatar-inner" id="phAvatar">D</div></div>
+            <span class="insta-name" id="phName">brand</span>
           </div>
           <span class="insta-dots">...</span>
         </div>
-
-        <!-- 슬라이드 이미지 -->
         <div class="insta-body" id="instaBody">
-          <div class="insta-placeholder" id="phonePlaceholder">
-            <div class="ph-icon">&#9634;</div>
-            <span>카드뉴스를 생성하면<br>여기에 미리보기가 표시됩니다</span>
+          <div class="insta-placeholder" id="phPlaceholder">
+            <span class="ph">슬라이드 프리뷰</span>
+            <span style="font-size:11px">콘텐츠를 생성하세요</span>
           </div>
-          <img id="phoneSlideImg" style="display:none" alt="slide">
-          <button class="slide-nav prev" id="navPrev" onclick="navSlide(-1)">&#8249;</button>
-          <button class="slide-nav next" id="navNext" onclick="navSlide(1)">&#8250;</button>
+          <img id="phImg" style="display:none" alt="slide">
+          <button class="slide-nav-arrow prev" id="phPrev" onclick="navPhone(-1)">&#8249;</button>
+          <button class="slide-nav-arrow next" id="phNext" onclick="navPhone(1)">&#8250;</button>
         </div>
-
-        <!-- 인디케이터 -->
-        <div class="insta-indicators" id="phoneIndicators"></div>
-
-        <!-- 액션바 -->
+        <div class="insta-indicators" id="phIndicators"></div>
         <div class="insta-actions">
-          <div class="insta-actions-left">
+          <div class="insta-left">
             <svg class="insta-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <svg class="insta-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <svg class="insta-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </div>
           <svg class="insta-icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
-
-        <!-- 캡션 -->
-        <div class="insta-caption" id="phoneCaption">
-          <strong id="captionName">brand</strong> 카드뉴스 미리보기
-        </div>
+        <div class="insta-likes">좋아요 1,234개</div>
+      </div>
+      <div class="phone-nav">
+        <button class="pn-btn" onclick="navPhone(-Infinity)">&#171;</button>
+        <button class="pn-btn" onclick="navPhone(-1)">&#8249;</button>
+        <span id="phPageNum">1 / 1</span>
+        <button class="pn-btn" onclick="navPhone(1)">&#8250;</button>
+        <button class="pn-btn" onclick="navPhone(Infinity)">&#187;</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- 로그인 모달 -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h3>로그인</h3>
+    <input id="loginId" placeholder="아이디" onkeydown="if(event.key==='Enter')doLogin()">
+    <input id="loginPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="modal-err" id="loginErr"></div>
+    <button class="gen-btn" onclick="doLogin()">로그인</button>
+    <button class="cancel-btn" onclick="hideLogin()">취소</button>
+  </div>
+</div>
+
+<!-- 풀스크린 프리뷰 -->
+<div class="fullscreen" id="fullscreen">
+  <span class="fs-page" id="fsPage">1 / 7</span>
+  <button class="fs-close" onclick="closeFS()">&#10005;</button>
+  <img class="fs-img" id="fsImg">
+  <button class="fs-nav prev" onclick="navFS(-1)">&#8249;</button>
+  <button class="fs-nav next" onclick="navFS(1)">&#8250;</button>
+</div>
+
 <script>
-// ── 상태 ──
-let currentSlides = [];
-let currentSlideIdx = 0;
-
-// ── 탭 ──
+// ═══ 상태 ═══
 let currentUser = null;
+let phoneSlides = [];
+let phoneIdx = 0;
+let editSlides = []; // {type, fields, png_url}
+let editIdx = 0;
+let fsSlides = [];
+let fsIdx = 0;
 
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(t => {
-    const tabName = t.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
-    t.classList.toggle('active', tabName === name);
-  });
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panel = document.getElementById('panel-' + name);
-  if (panel) panel.classList.add('active');
-  if (name === 'samples') loadSamples();
+// ═══ 페이지 네비 ═══
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const p = document.getElementById('page-' + name);
+  if (p) p.classList.add('active');
+
+  // 브레드크럼
+  const bc = document.getElementById('breadcrumb');
+  const steps = {
+    start: [{s:'active',l:'시작'}],
+    generating: [{s:'active',l:'시작'},{s:'active',l:'카드뉴스 만들기'}],
+    edit: [{s:'done',l:'시작'},{s:'done',l:'카드뉴스 만들기'},{s:'active',l:'편집'}],
+  };
+  const st = steps[name];
+  if (st) {
+    bc.innerHTML = st.map((s,i) =>
+      (i > 0 ? '<span class="bc-line"></span>' : '') +
+      '<div class="bc-dot ' + s.s + '"></div><span class="bc-label">' + s.l + '</span>'
+    ).join('');
+  } else { bc.innerHTML = ''; }
+
+  if (name === 'worklist') loadWorklist();
   if (name === 'history') loadHistory();
-  if (name === 'brand') loadBrand();
   if (name === 'admin') { loadUsers(); loadLogs(); }
+  if (name === 'brand') loadBrand();
+
+  // 사이드바 활성
+  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+  if (name === 'worklist') document.getElementById('sbWork')?.classList.add('active');
+  if (name === 'history') document.getElementById('sbHistory')?.classList.add('active');
+  if (name === 'admin') document.getElementById('sbAdmin')?.classList.add('active');
 }
 
-// ── 인증 ──
-function showLogin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('loginId').focus(); }
-function hideLogin() { document.getElementById('loginModal').style.display = 'none'; }
+// ═══ 폰 미리보기 ═══
+function setPhoneSlides(urls, topic) {
+  phoneSlides = urls; phoneIdx = 0;
+  const img = document.getElementById('phImg');
+  const ph = document.getElementById('phPlaceholder');
+  if (!urls.length) { ph.style.display = 'flex'; img.style.display = 'none'; return; }
+  ph.style.display = 'none'; img.style.display = 'block'; img.src = urls[0];
+  updatePhoneNav();
+}
+function navPhone(d) {
+  if (!phoneSlides.length) return;
+  if (d === -Infinity) phoneIdx = 0;
+  else if (d === Infinity) phoneIdx = phoneSlides.length - 1;
+  else phoneIdx = Math.max(0, Math.min(phoneSlides.length - 1, phoneIdx + d));
+  document.getElementById('phImg').src = phoneSlides[phoneIdx];
+  updatePhoneNav();
+}
+function updatePhoneNav() {
+  const n = phoneSlides.length;
+  document.getElementById('phPageNum').textContent = (phoneIdx+1) + ' / ' + n;
+  document.getElementById('phPrev').classList.toggle('show', phoneIdx > 0);
+  document.getElementById('phNext').classList.toggle('show', phoneIdx < n-1);
+  // indicators
+  document.getElementById('phIndicators').innerHTML = phoneSlides.map((_,i) =>
+    '<div class="insta-ind' + (i===phoneIdx?' on':'') + '"></div>'
+  ).join('');
+}
+// 터치 스와이프
+let tsx=0;
+document.getElementById('instaBody').addEventListener('touchstart',e=>{tsx=e.touches[0].clientX});
+document.getElementById('instaBody').addEventListener('touchend',e=>{const d=tsx-e.changedTouches[0].clientX;if(Math.abs(d)>40)navPhone(d>0?1:-1)});
+// 클릭으로 풀스크린
+document.getElementById('phImg').addEventListener('click',()=>{
+  if(phoneSlides.length){fsSlides=phoneSlides;fsIdx=phoneIdx;openFS()}
+});
 
-async function doLogin() {
-  const id = document.getElementById('loginId').value;
-  const pw = document.getElementById('loginPw').value;
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
+// ═══ 풀스크린 ═══
+function openFS(){document.getElementById('fullscreen').classList.add('show');updateFS()}
+function closeFS(){document.getElementById('fullscreen').classList.remove('show')}
+function navFS(d){fsIdx=Math.max(0,Math.min(fsSlides.length-1,fsIdx+d));updateFS()}
+function updateFS(){
+  document.getElementById('fsImg').src=fsSlides[fsIdx];
+  document.getElementById('fsPage').textContent=(fsIdx+1)+' / '+fsSlides.length;
+}
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('fullscreen').classList.contains('show')){
+    if(e.key==='Escape')closeFS();
+    if(e.key==='ArrowLeft')navFS(-1);
+    if(e.key==='ArrowRight')navFS(1);
+  }
+});
+
+// ═══ 생성 ═══
+async function startGenerate() {
+  goPage('generating');
+  const bar = document.getElementById('genBarFill');
+  bar.style.width = '10%';
+  setTimeout(()=>{bar.style.width='30%';setStep(1,'active',1,'')},2000);
+  setTimeout(()=>{bar.style.width='60%';setStep(1,'done',2,'active')},5000);
+
   try {
-    const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:id,password:pw}) });
+    const text = document.getElementById('inputText').value;
+    const res = await fetch('/api/generate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
     const data = await res.json();
+    bar.style.width = '100%';
+    setStep(1,'done',2,'done');
+
     if (data.status === 'ok') {
-      currentUser = data.user;
-      hideLogin();
-      updateAuthUI();
+      setTimeout(()=>{
+        setPhoneSlides(data.png_urls, data.topic);
+        goPage('edit');
+        // 간단 편집 데이터 구성
+        editSlides = data.png_urls.map((u,i) => ({
+          type: i===0?'커버':i===data.png_urls.length-1?'CTA':'본문',
+          png_url: u,
+        }));
+        editIdx = 0;
+        renderEditor();
+      }, 800);
     } else {
-      errEl.textContent = data.message;
-      errEl.style.display = 'block';
+      alert(data.message || '생성 실패');
+      goPage('start');
     }
-  } catch(e) { errEl.textContent = '로그인 실패'; errEl.style.display = 'block'; }
+  } catch(e) {
+    alert('생성 실패: ' + e.message);
+    goPage('start');
+  }
+}
+async function generateFromNews() {
+  document.getElementById('inputText').value = '';
+  startGenerate();
+}
+function setStep(s1,c1,s2,c2) {
+  ['gc','gl'].forEach(p=>{
+    document.getElementById(p+'1').className = p==='gc'?'circle '+c1:'label '+c1;
+    if(c2) document.getElementById(p+'2').className = p==='gc'?'circle '+c2:'label '+c2;
+  });
+  if(c1==='done') document.getElementById('gline1').classList.add('done');
 }
 
-async function doLogout() {
-  await fetch('/api/logout', { method:'POST' });
-  currentUser = null;
-  updateAuthUI();
+// ═══ 편집 ═══
+function renderEditor() {
+  if (!editSlides.length) return;
+  const s = editSlides[editIdx];
+  document.getElementById('editSlideType').textContent = s.type;
+  document.getElementById('editSlideNum').textContent = (editIdx+1) + ' / ' + editSlides.length;
+  // 폰 동기화
+  if (phoneSlides.length) { phoneIdx = editIdx; document.getElementById('phImg').src = phoneSlides[phoneIdx]; updatePhoneNav(); }
+  // 에디터 카드
+  document.getElementById('editorCard').innerHTML = `
+    <div class="ed-field"><div class="ed-label">슬라이드 타입</div><div style="font-size:15px;color:var(--accent)">${s.type}</div></div>
+    <div class="ed-field"><div class="ed-label">색상 프리셋</div>
+      <div class="preset-row">
+        <span class="preset-chip" onclick="this.parentNode.querySelectorAll('.preset-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">☀ 밝은 배경</span>
+        <span class="preset-chip active" onclick="this.parentNode.querySelectorAll('.preset-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">🌙 어두운 배경</span>
+      </div>
+    </div>
+    <div class="ed-field"><div class="ed-label">레이아웃</div>
+      <div class="layout-grid">
+        ${[0,1,2,3,4,5,6,7,8].map(i=>'<div class="layout-dot'+(i===3?' active':'')+'" onclick="this.parentNode.querySelectorAll(\\'.layout-dot\\').forEach(d=>d.classList.remove(\\'active\\'));this.classList.add(\\'active\\')"></div>').join('')}
+      </div>
+    </div>
+    <div class="img-actions">
+      <button class="img-btn">&#128248; 첨부 이미지</button>
+      <button class="img-btn">&#10024; 자동 이미지</button>
+      <button class="img-btn">&#128269; 검색 이미지</button>
+    </div>
+    <div class="bottom-actions">
+      <button class="ba-btn">&#10024; 슬라이드 개선</button>
+      <button class="ba-btn" style="color:var(--err)">&#128465; 슬라이드 삭제</button>
+    </div>
+  `;
 }
-
-function updateAuthUI() {
-  const userEl = document.getElementById('authUser');
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const adminTab = document.getElementById('adminTab');
-  if (currentUser) {
-    userEl.textContent = currentUser.username + (currentUser.role === 'admin' ? ' (관리자)' : '');
-    loginBtn.style.display = 'none';
-    logoutBtn.style.display = 'block';
-    adminTab.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-  } else {
-    userEl.textContent = '';
-    loginBtn.style.display = 'block';
-    logoutBtn.style.display = 'none';
-    adminTab.style.display = 'none';
+function navEditSlide(d) {
+  editIdx = Math.max(0, Math.min(editSlides.length-1, editIdx+d));
+  renderEditor();
+}
+function addSlide() { /* placeholder */ }
+function saveCurrentEdit() { alert('저장되었습니다'); }
+function exportPNG() {
+  if (phoneSlides.length) {
+    phoneSlides.forEach((url,i) => {
+      const a = document.createElement('a');
+      a.href = url; a.download = 'slide_'+(i+1)+'.png';
+      document.body.appendChild(a); a.click(); a.remove();
+    });
   }
 }
 
-async function checkAuth() {
+// ═══ 작업목록 (샘플 + 히스토리) ═══
+async function loadWorklist() {
+  const grid = document.getElementById('workGrid');
+  grid.innerHTML = '<p style="color:var(--dim);font-size:13px">로딩 중...</p>';
   try {
-    const res = await fetch('/api/me');
-    const data = await res.json();
-    if (data.status === 'ok') { currentUser = data.user; updateAuthUI(); }
-  } catch(e) {}
+    const [samplesRes, historyRes] = await Promise.all([fetch('/api/samples'), fetch('/api/history')]);
+    const samples = await samplesRes.json();
+    const history = await historyRes.json();
+    let items = [];
+    // 샘플
+    (samples.categories||[]).forEach(cat => {
+      if (cat.slides.length) items.push({title:cat.name+' 샘플',date:'',thumb:cat.slides[0],urls:cat.slides});
+    });
+    // 히스토리
+    (history.history||[]).forEach(h => {
+      const urls = h.png_urls||[];
+      if (urls.length) items.push({title:h.topic||h.session_name,date:(h.created_at||'').slice(0,16).replace('T',' '),thumb:urls[0],urls});
+    });
+    grid.innerHTML = items.map((it,i) => `
+      <div class="work-item" onclick='viewWork(${JSON.stringify(it.urls)}, "${it.title}")'>
+        <div class="work-thumb"><img src="${it.thumb}" loading="lazy"></div>
+        <div class="work-title">${it.title}</div>
+        <div class="work-date">${it.date}</div>
+      </div>
+    `).join('') || '<p style="color:var(--dim)">작업이 없습니다</p>';
+  } catch(e) { grid.innerHTML = '<p style="color:var(--err)">로드 실패</p>'; }
+}
+function viewWork(urls, title) {
+  setPhoneSlides(urls, title);
+  editSlides = urls.map((u,i) => ({type:i===0?'커버':i===urls.length-1?'CTA':'본문',png_url:u}));
+  editIdx = 0;
+  goPage('edit');
+  renderEditor();
 }
 
-// ── 어드민: 회원관리 ──
-async function loadUsers() {
-  try {
-    const res = await fetch('/api/admin/users');
-    const data = await res.json();
-    if (data.status !== 'ok') return;
-    document.getElementById('userList').innerHTML = data.users.map(u =>
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:13px">' +
-      '<div><strong>' + u.username + '</strong> <span style="color:var(--text-dim)">(' + u.role + ')</span>' +
-      '<div style="font-size:11px;color:var(--text-dim);margin-top:2px">가입: ' + (u.created_at||'').slice(0,10) + ' | 마지막 접속: ' + (u.last_login_at ? u.last_login_at.slice(0,16).replace('T',' ') : '없음') + '</div></div>' +
-      (u.username !== 'admin' ? '<button onclick="deleteUser(\''+u.id+'\')" style="background:var(--error);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer">삭제</button>' : '') +
-      '</div>'
-    ).join('');
-  } catch(e) {}
-}
-
-async function addUser() {
-  const u = document.getElementById('newUser').value;
-  const p = document.getElementById('newPw').value;
-  const r = document.getElementById('newRole').value;
-  if (!u || !p) return;
-  await fetch('/api/admin/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p,role:r}) });
-  document.getElementById('newUser').value = '';
-  document.getElementById('newPw').value = '';
-  loadUsers();
-}
-
-async function deleteUser(id) {
-  if (!confirm('정말 삭제?')) return;
-  await fetch('/api/admin/users/' + id, { method:'DELETE' });
-  loadUsers();
-}
-
-async function loadLogs() {
-  try {
-    const res = await fetch('/api/admin/logs');
-    const data = await res.json();
-    if (data.status !== 'ok') return;
-    document.getElementById('logList').innerHTML = data.logs.map(l =>
-      '<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">' +
-      '<span style="color:var(--text-dim);min-width:130px">' + (l.created_at||'').slice(0,16).replace('T',' ') + '</span>' +
-      '<span style="min-width:60px;font-weight:600;color:' + (l.action==='login'?'var(--success)':'var(--text-dim)') + '">' + l.action + '</span>' +
-      '<span>' + (l.cn_users?.username || '?') + '</span>' +
-      '<span style="color:var(--text-dim)">' + (l.ip_address||'') + '</span>' +
-      '</div>'
-    ).join('') || '<p style="color:var(--text-dim)">접속 기록이 없습니다.</p>';
-  } catch(e) {}
-}
-
-// ── 히스토리 (Supabase) ──
+// ═══ 히스토리 (Supabase) ═══
 async function loadHistory() {
+  const el = document.getElementById('historyList');
   try {
     const res = await fetch('/api/history');
     const data = await res.json();
-    const el = document.getElementById('historyList');
-    if (!data.history || !data.history.length) {
-      el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">아직 생성된 카드뉴스가 없습니다.</p>';
-      return;
-    }
+    if (!data.history?.length) { el.innerHTML = '<p style="color:var(--dim)">기록이 없습니다</p>'; return; }
     el.innerHTML = data.history.map(h => {
-      const urls = h.png_urls || [];
-      return '<div style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:10px;cursor:pointer" onclick="viewHistory('+h.id+')">' +
-        '<div style="display:flex;justify-content:space-between;margin-bottom:8px">' +
-        '<strong style="font-size:14px">' + (h.topic || h.session_name) + '</strong>' +
-        '<span style="font-size:11px;color:var(--text-dim)">' + (h.category||'') + ' | ' + h.slides_count + '장</span>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--text-dim)">' + (h.created_at||'').slice(0,16).replace('T',' ') + '</div>' +
-        (urls.length ? '<div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto">' + urls.map(u=>'<img src="'+u+'" style="height:80px;border-radius:6px;flex-shrink:0">').join('') + '</div>' : '') +
-        '</div>';
+      const urls = h.png_urls||[];
+      return `<div class="start-option" onclick='viewWork(${JSON.stringify(urls)},"${h.topic||""}")'>
+        <div class="left">
+          <div>
+            <div class="t">${h.topic||h.session_name}</div>
+            <div class="d">${h.category||''} | ${h.slides_count}장 | ${(h.created_at||'').slice(0,16).replace('T',' ')}</div>
+          </div>
+        </div>
+        <span class="arrow">&#8250;</span>
+      </div>`;
     }).join('');
-  } catch(e) {
-    document.getElementById('historyList').innerHTML = '<p style="color:var(--error);font-size:13px">로드 실패</p>';
-  }
+  } catch(e) { el.innerHTML = '<p style="color:var(--err)">로드 실패</p>'; }
 }
 
-async function viewHistory(id) {
-  try {
-    const res = await fetch('/api/history/' + id);
-    const data = await res.json();
-    if (data.status === 'ok' && data.data.png_urls) {
-      setSlides(data.data.png_urls, data.data.topic || '카드뉴스');
-    }
-  } catch(e) {}
-}
-
-// ── 컬러 ──
-function pickColor(el) {
-  document.querySelectorAll('.color-chip').forEach(c => c.classList.remove('sel'));
-  el.classList.add('sel');
-  document.getElementById('custom_main').value = el.dataset.main;
-  document.getElementById('custom_sub').value = el.dataset.sub;
-  updatePreview();
-}
-
-// ── 라디오 ──
-function pick(el, gid) {
-  document.querySelectorAll('#' + gid + ' .radio-pill').forEach(r => r.classList.remove('sel'));
-  el.classList.add('sel');
-}
-
-function getVal(gid) {
-  const s = document.querySelector('#' + gid + ' .radio-pill.sel');
-  return s ? s.dataset.value : '';
-}
-
-// ── 상태 메시지 ──
-function msg(id, type, text) {
-  const el = document.getElementById(id);
-  el.className = 'status-msg show ' + type;
-  el.innerHTML = text;
-}
-
-// ── 폰 미리보기 업데이트 ──
-function updatePreview() {
-  const name = document.getElementById('brand_name').value || 'brand';
-  const handle = document.getElementById('instagram_handle').value || '@brand';
-  const mainColor = document.getElementById('custom_main').value || '#7C3AED';
-
-  document.getElementById('phoneAvatar').textContent = name.charAt(0).toUpperCase();
-  document.getElementById('phoneAvatar').style.background = `linear-gradient(135deg, ${mainColor}, #E040FB)`;
-  document.getElementById('phoneName').textContent = handle.replace('@', '') || name;
-  document.getElementById('captionName').textContent = handle.replace('@', '') || name;
-}
-
-// ── 슬라이드 세팅 ──
-function setSlides(urls, topic) {
-  currentSlides = urls;
-  currentSlideIdx = 0;
-
-  const body = document.getElementById('instaBody');
-  const img = document.getElementById('phoneSlideImg');
-  const ph = document.getElementById('phonePlaceholder');
-  const indicators = document.getElementById('phoneIndicators');
-  const caption = document.getElementById('phoneCaption');
-  const captionName = document.getElementById('captionName').textContent;
-
-  if (urls.length === 0) {
-    ph.style.display = 'flex';
-    img.style.display = 'none';
-    indicators.innerHTML = '';
-    return;
-  }
-
-  ph.style.display = 'none';
-  img.style.display = 'block';
-  img.src = urls[0];
-
-  // 인디케이터
-  indicators.innerHTML = urls.map((_, i) =>
-    `<div class="insta-ind${i === 0 ? ' active' : ''}"></div>`
-  ).join('');
-
-  // 캡션
-  caption.innerHTML = `<strong>${captionName}</strong> ${topic || '카드뉴스'}`;
-
-  updateNav();
-}
-
-function navSlide(dir) {
-  if (currentSlides.length === 0) return;
-  currentSlideIdx = Math.max(0, Math.min(currentSlides.length - 1, currentSlideIdx + dir));
-  document.getElementById('phoneSlideImg').src = currentSlides[currentSlideIdx];
-
-  document.querySelectorAll('.insta-ind').forEach((d, i) => {
-    d.classList.toggle('active', i === currentSlideIdx);
-  });
-  updateNav();
-}
-
-function updateNav() {
-  const prev = document.getElementById('navPrev');
-  const next = document.getElementById('navNext');
-  prev.classList.toggle('visible', currentSlideIdx > 0);
-  next.classList.toggle('visible', currentSlideIdx < currentSlides.length - 1);
-}
-
-// ── 터치 스와이프 ──
-let touchStartX = 0;
-document.getElementById('instaBody').addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-});
-document.getElementById('instaBody').addEventListener('touchend', e => {
-  const diff = touchStartX - e.changedTouches[0].clientX;
-  if (Math.abs(diff) > 40) navSlide(diff > 0 ? 1 : -1);
-});
-
-// ── 브랜드 로드/저장 ──
+// ═══ 브랜드 ═══
 async function loadBrand() {
   try {
     const res = await fetch('/api/brand');
-    const data = await res.json();
-    if (data.status === 'ok' && data.brand.brand_name && !data.brand.brand_name.includes('미설정')) {
-      const b = data.brand;
-      document.getElementById('brand_name').value = b.brand_name || '';
-      document.getElementById('instagram_handle').value = b.instagram_handle || '';
-      document.getElementById('target_age').value = b.target_age || '';
-      document.getElementById('target_interest').value = b.target_interest || '';
-      document.getElementById('target_needs').value = b.target_needs || '';
-      if (b.main_color) document.getElementById('custom_main').value = b.main_color;
-      if (b.sub_color) document.getElementById('custom_sub').value = b.sub_color;
-      updatePreview();
-    }
+    const d = (await res.json()).brand || {};
+    document.getElementById('bBrand').value = d.brand_name||'';
+    document.getElementById('bHandle').value = d.instagram_handle||'';
+    document.getElementById('bMainColor').value = d.main_color||'';
+    document.getElementById('bSubColor').value = d.sub_color||'';
+    document.getElementById('bTarget').value = d.target_audience||'';
+    document.getElementById('bTone').value = d.tone_guide||'';
+    document.getElementById('bCta').value = d.cta||'';
+    // 폰 이름 업데이트
+    document.getElementById('phName').textContent = d.brand_name || 'brand';
+    document.getElementById('phAvatar').textContent = (d.brand_name||'D')[0].toUpperCase();
   } catch(e) {}
 }
-
 async function saveBrand() {
-  const sel = document.querySelector('.color-chip.sel');
-  const mainC = document.getElementById('custom_main').value || (sel ? sel.dataset.main : '#7C3AED');
-  const subC = document.getElementById('custom_sub').value || (sel ? sel.dataset.sub : '#F5F3FF');
-  const tone = document.getElementById('custom_tone').value || getVal('toneGroup');
-  const cta = document.getElementById('custom_cta').value || getVal('ctaGroup');
-
-  const body = {
-    brand_name: document.getElementById('brand_name').value,
-    instagram_handle: document.getElementById('instagram_handle').value,
-    main_color: mainC, sub_color: subC,
-    target_age: document.getElementById('target_age').value,
-    target_interest: document.getElementById('target_interest').value,
-    target_needs: document.getElementById('target_needs').value,
-    goal: getVal('goalGroup'), tone_items: [tone], cta: cta,
-  };
-
+  const msg = document.getElementById('brandMsg');
   try {
-    const res = await fetch('/api/brand', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (data.status === 'ok') msg('brandStatus','ok','브랜드 설정이 저장되었습니다!');
-    else msg('brandStatus','err', data.message);
-  } catch(e) {
-    msg('brandStatus','err','저장 실패: ' + e.message);
-  }
+    await fetch('/api/brand', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      brand_name:document.getElementById('bBrand').value,
+      instagram_handle:document.getElementById('bHandle').value,
+      main_color:document.getElementById('bMainColor').value,
+      sub_color:document.getElementById('bSubColor').value,
+      target_age:document.getElementById('bTarget').value,
+      target_interest:'',target_needs:'',
+      goal:'정보 전달',tone_items:[document.getElementById('bTone').value],
+      cta:document.getElementById('bCta').value,
+    })});
+    msg.style.display='block';msg.style.color='var(--ok)';msg.textContent='저장 완료!';
+  } catch(e) {msg.style.display='block';msg.style.color='var(--err)';msg.textContent='실패';}
 }
 
-// ── 생성 ──
-async function startGen() {
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> 생성 중...';
-
-  document.getElementById('stepsArea').style.display = 'block';
-  document.getElementById('resultCard').style.display = 'none';
-  msg('genStatus','load','AI가 카드뉴스를 생성 중입니다 (2~5분)...');
-
-  // 단계 애니메이션
-  const delays = [0,8000,20000,35000,60000,90000,140000];
-  for (let i = 0; i < 7; i++) {
-    setTimeout(() => {
-      if (i > 0) document.getElementById('s'+i).className = 'step-row ok';
-      document.getElementById('s'+(i+1)).className = 'step-row on';
-    }, delays[i]);
-  }
-
+// ═══ 인증 ═══
+function toggleAuth() {
+  if (currentUser) { doLogout(); } else { showLogin(); }
+}
+function showLogin() { document.getElementById('loginModal').classList.add('show'); document.getElementById('loginId').focus(); }
+function hideLogin() { document.getElementById('loginModal').classList.remove('show'); }
+async function doLogin() {
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
   try {
-    const res = await fetch('/api/generate', { method: 'POST' });
+    const res = await fetch('/api/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('loginId').value,password:document.getElementById('loginPw').value})});
     const data = await res.json();
-    for (let i = 1; i <= 7; i++) document.getElementById('s'+i).className = 'step-row ok';
-
-    if (data.status === 'ok') {
-      msg('genStatus','ok', data.slides_count + '장 생성 완료!');
-
-      // 결과 표시
-      document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('resultTopic').textContent = data.topic;
-      document.getElementById('resultSlides').innerHTML = data.png_urls.map(u =>
-        `<img src="${u}" onclick="setSlides([...document.querySelectorAll('#resultSlides img')].map(i=>i.src),'${data.topic}')">`
-      ).join('');
-
-      // 폰 미리보기에 세팅
-      setSlides(data.png_urls, data.topic);
-    } else {
-      msg('genStatus','err', data.message);
-    }
-  } catch(e) {
-    msg('genStatus','err','생성 실패: ' + e.message);
+    if (data.status==='ok') { currentUser=data.user; hideLogin(); updateAuth(); }
+    else { err.textContent=data.message; err.style.display='block'; }
+  } catch(e) { err.textContent='로그인 실패'; err.style.display='block'; }
+}
+async function doLogout() {
+  await fetch('/api/logout',{method:'POST'}); currentUser=null; updateAuth();
+}
+function updateAuth() {
+  const btn = document.getElementById('sbAuth');
+  const adminTab = document.getElementById('sbAdmin');
+  if (currentUser) {
+    btn.title = currentUser.username + ' (로그아웃)';
+    btn.style.color = 'var(--accent)';
+    adminTab.style.display = currentUser.role==='admin'?'flex':'none';
+  } else {
+    btn.title = '로그인';
+    btn.style.color = '';
+    adminTab.style.display = 'none';
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '카드뉴스 생성 시작';
+}
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    const d = await res.json();
+    if (d.status==='ok') { currentUser=d.user; updateAuth(); }
+  } catch(e) {}
 }
 
-// ── 히스토리 ──
-async function loadSessions() {
+// ═══ 어드민 ═══
+async function loadUsers() {
   try {
-    const res = await fetch('/api/sessions');
-    const data = await res.json();
-    const el = document.getElementById('sessionList');
-    if (!data.sessions.length) {
-      el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">아직 생성된 카드뉴스가 없습니다.</p>';
-      return;
-    }
-    el.innerHTML = data.sessions.map(s =>
-      `<div class="session-row" onclick="viewSession('${s.name}')">
-        <div>
-          <div style="font-weight:600;font-size:13px">${s.topic || s.name}</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px">${s.name} | ${s.slides_count}장</div>
-        </div>
-      </div>`
+    const d = await (await fetch('/api/admin/users')).json();
+    if (d.status!=='ok') return;
+    document.getElementById('userList').innerHTML = d.users.map(u =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><strong>'+u.username+'</strong> <span style="color:var(--dim)">('+u.role+')</span><br><span style="font-size:11px;color:var(--dim)">마지막: '+(u.last_login_at?(u.last_login_at+'').slice(0,16).replace('T',' '):'없음')+'</span></div>' +
+      (u.username!=='admin'?'<button onclick="delUser(\''+u.id+'\')" style="background:var(--err);color:#FFF;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">삭제</button>':'') +
+      '</div>'
     ).join('');
-  } catch(e) {
-    document.getElementById('sessionList').innerHTML = '<p style="color:var(--error);font-size:13px">로드 실패</p>';
-  }
+  } catch(e) {}
 }
-
-async function viewSession(name) {
+async function addUser() {
+  await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('newU').value,password:document.getElementById('newP').value,role:'user'})});
+  document.getElementById('newU').value='';document.getElementById('newP').value='';loadUsers();
+}
+async function delUser(id) { if(!confirm('삭제?'))return; await fetch('/api/admin/users/'+id,{method:'DELETE'}); loadUsers(); }
+async function loadLogs() {
   try {
-    const res = await fetch('/api/sessions/' + name);
-    const data = await res.json();
-    if (data.status === 'ok') {
-      const urls = data.data.png_urls || [];
-      const topic = data.data.topic?.selected_topic || name;
-      setSlides(urls, topic);
-    }
+    const d = await (await fetch('/api/admin/logs')).json();
+    if (d.status!=='ok') return;
+    document.getElementById('logList').innerHTML = d.logs.map(l =>
+      '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+      '<span style="color:var(--dim);min-width:120px">'+(l.created_at||'').slice(0,16).replace('T',' ')+'</span>' +
+      '<span style="color:'+(l.action==='login'?'var(--ok)':'var(--dim)')+'">'+l.action+'</span>' +
+      '<span>'+(l.cn_users?.username||'?')+'</span></div>'
+    ).join('') || '<p style="color:var(--dim)">기록 없음</p>';
   } catch(e) {}
 }
 
-// ── 샘플 갤러리 ──
-async function loadSamples() {
-  try {
-    const res = await fetch('/api/samples');
-    const data = await res.json();
-    const area = document.getElementById('samplesArea');
-
-    if (!data.categories || !data.categories.length) {
-      area.innerHTML = '<p style="color:var(--text-dim);font-size:13px">샘플이 없습니다.</p>';
-      return;
-    }
-
-    area.innerHTML = data.categories.map(cat => `
-      <div style="margin-bottom:24px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:12px;height:12px;border-radius:50%;background:${cat.color}"></div>
-          <span style="font-size:16px;font-weight:700">${cat.name}</span>
-          <span style="font-size:12px;color:var(--text-dim)">${cat.desc}</span>
-        </div>
-        <div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0">
-          ${cat.slides.map(url => `
-            <img src="${url}"
-                 style="height:160px;border-radius:10px;cursor:pointer;flex-shrink:0;transition:transform 0.15s;border:1px solid var(--border)"
-                 onclick="loadSampleToPhone('${cat.key}','${cat.name}')"
-                 onmouseover="this.style.transform='scale(1.03)'"
-                 onmouseout="this.style.transform='scale(1)'"
-                 loading="lazy">
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    document.getElementById('samplesArea').innerHTML = '<p style="color:var(--error);font-size:13px">로드 실패</p>';
-  }
-}
-
-async function loadSampleToPhone(catKey, catName) {
-  try {
-    const res = await fetch('/api/samples');
-    const data = await res.json();
-    const cat = data.categories.find(c => c.key === catKey);
-    if (cat && cat.slides.length) {
-      setSlides(cat.slides, catName + ' 샘플 카드뉴스');
-    }
-  } catch(e) {}
-}
-
-// 초기화
+// ═══ 초기화 ═══
 checkAuth();
 loadBrand();
 </script>
