@@ -257,7 +257,43 @@ async def generate(request: Request):
             "status": "ok", "session_name": session_name,
             "topic": topic.get("selected_topic", ""),
             "slides_count": len(png_paths), "png_urls": png_urls,
+            "slides_data": writer_output.get("slides", []),
         })
+
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse({"status": "error", "message": str(e)})
+
+
+@app.post("/api/re-render")
+async def re_render(request: Request):
+    """수정된 슬라이드 데이터를 받아 PNG 재생성"""
+    data = await request.json()
+    slide = data.get("slide", {})
+    slide_index = data.get("slide_index", 0)
+    session_name = data.get("session_name", "edited")
+    theme = data.get("theme", "dark")
+
+    try:
+        from pipeline.renderer import render_html, capture_png
+        from pipeline.config import OUTPUT_DIR
+
+        output_dir = OUTPUT_DIR / session_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        html = render_html(slide, "", slide_index, data.get("total_slides", 7), theme)
+        html_path = output_dir / f"slide_{slide_index + 1}.html"
+        html_path.write_text(html, encoding="utf-8")
+
+        png_path = output_dir / f"slide_{slide_index + 1}.png"
+
+        import asyncio
+        await asyncio.to_thread(
+            lambda: __import__('asyncio').run(capture_png(html, png_path))
+        )
+
+        png_url = f"/output/{session_name}/slide_{slide_index + 1}.png?t={int(datetime.now().timestamp())}"
+        return JSONResponse({"status": "ok", "png_url": png_url})
 
     except Exception as e:
         traceback.print_exc()

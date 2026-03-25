@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 from .config import OUTPUT_DIR, TEMPLATES_DIR, parse_brand
 
 
-def render_html(slide: dict, image_path: str, slide_index: int, total_slides: int) -> str:
+def render_html(slide: dict, image_path: str, slide_index: int, total_slides: int, theme: str = "dark") -> str:
     """슬라이드 데이터를 HTML로 렌더링"""
     brand = parse_brand()
 
@@ -17,7 +17,10 @@ def render_html(slide: dict, image_path: str, slide_index: int, total_slides: in
 
     slide_type = slide.get("slide_type", "content")
     template_name = f"{slide_type}.html"
-    template = env.get_template(template_name)
+    try:
+        template = env.get_template(template_name)
+    except Exception:
+        template = env.get_template("content.html")
 
     # 이미지 경로를 file:// URI로 변환
     if image_path and Path(image_path).exists():
@@ -25,14 +28,36 @@ def render_html(slide: dict, image_path: str, slide_index: int, total_slides: in
     else:
         image_uri = ""
 
+    # 테마에 따른 색상 오버라이드
+    if theme == "light":
+        main_color = brand["main_color"]
+        sub_color = "#FFFFFF"
+        text_color = "#1A1A1A"
+    else:
+        main_color = brand["main_color"]
+        sub_color = brand["sub_color"]
+        text_color = "#FFFFFF"
+
     context = {
         "brand_name": brand["brand_name"],
         "instagram_handle": brand.get("instagram_handle", ""),
-        "main_color": brand["main_color"],
-        "sub_color": brand["sub_color"],
+        "main_color": main_color,
+        "sub_color": sub_color,
+        "text_color": text_color,
+        "theme": theme,
         "heading": slide.get("heading", ""),
         "body": slide.get("body", ""),
         "category_tag": slide.get("category_tag", ""),
+        "quote": slide.get("quote", ""),
+        "quote_source": slide.get("quote_source", ""),
+        "stat_number": slide.get("stat_number", ""),
+        "stat_unit": slide.get("stat_unit", ""),
+        "source": slide.get("source", ""),
+        "items": slide.get("items", []),
+        "left_title": slide.get("left_title", ""),
+        "right_title": slide.get("right_title", ""),
+        "left_items": slide.get("left_items", []),
+        "right_items": slide.get("right_items", []),
         "image_path": image_uri,
         "slide_number": slide_index + 1,
         "total_slides": total_slides,

@@ -29,7 +29,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
 .main-header{padding:20px 32px 0;display:flex;justify-content:space-between;align-items:center}
 .breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
-.bc-dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.bc-dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
 .bc-dot.done{background:var(--ok)}
 .bc-dot.active{background:var(--accent)}
 .bc-label{font-size:12px}
@@ -206,19 +206,22 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <!-- ═══ 사이드바 ═══ -->
   <div class="sidebar">
     <button class="sb-btn plus" onclick="goPage('start')" title="새로 만들기">+</button>
-    <button class="sb-btn" id="sbWork" onclick="goPage('worklist')" title="작업목록">&#128196;</button>
-    <button class="sb-btn" id="sbHistory" onclick="goPage('history')" title="히스토리">&#128194;</button>
-    <button class="sb-btn" id="sbAdmin" onclick="goPage('admin')" title="관리" style="display:none">&#9881;</button>
+    <button class="sb-btn" id="sbWork" onclick="goPage('worklist')" title="작업목록"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+    <button class="sb-btn" id="sbHistory" onclick="goPage('history')" title="히스토리"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+    <button class="sb-btn" id="sbAdmin" onclick="goPage('admin')" title="관리" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.09 3.41L16.5 7.5l-3.41 1.09L12 12l-1.09-3.41L7.5 7.5l3.41-1.09z"/><path d="M19 13l.78 2.4 2.52.78-2.52.78L19 19.36l-.78-2.4-2.52-.78 2.52-.78z"/><path d="M5 17l.39 1.2 1.26.39-1.26.39L5 20.18l-.39-1.2-1.26-.39 1.26-.39z"/></svg></button>
     <div class="sb-spacer"></div>
-    <button class="sb-btn" id="sbAuth" onclick="toggleAuth()" title="로그인">&#128100;</button>
+    <button class="sb-btn" id="sbSettings" onclick="goPage('brand')" title="설정"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.26.46.4.98.4 1.51V12a1.65 1.65 0 0 0 1.51 1z"/></svg></button>
+    <button class="sb-btn" id="sbAuth" onclick="toggleAuth()" title="로그인"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
   </div>
 
   <!-- ═══ 메인 ═══ -->
   <div class="main">
     <div class="main-header">
+      <div style="display:flex;gap:8px;margin-right:16px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F56"></span><span style="width:12px;height:12px;border-radius:50%;background:#FFBD2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#27C93F"></span></div>
       <div class="breadcrumb" id="breadcrumb">
         <div class="bc-dot active"></div><span class="bc-label">시작</span>
       </div>
+      <div style="flex:1"></div>
       <button class="new-btn" onclick="goPage('start')">+ 새로 만들기</button>
     </div>
     <div class="main-body">
@@ -253,9 +256,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <span class="arrow">&#8250;</span>
         </div>
 
+        <div class="start-option" onclick="showFeedSelect()">
+          <div class="left">
+            <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></span>
+            <div><div class="t">피드에서 선택</div><div class="d">구독 중인 RSS 피드에서 기사를 선택하세요</div></div>
+          </div>
+          <span class="arrow">&#8250;</span>
+        </div>
+
+        <div class="start-option" onclick="showUrlInput()">
+          <div class="left">
+            <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+            <div><div class="t">URL 가져오기</div><div class="d">웹 페이지 URL을 입력하면 내용을 추출합니다</div></div>
+          </div>
+          <span class="arrow">&#8250;</span>
+        </div>
+
         <div class="start-option" onclick="goPage('brand')">
           <div class="left">
-            <span class="ico">&#127912;</span>
+            <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg></span>
             <div><div class="t">브랜드 설정</div><div class="d">컬러, 톤앤매너, CTA를 설정하세요</div></div>
           </div>
           <span class="arrow">&#8250;</span>
@@ -387,6 +406,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <svg class="insta-icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div class="insta-likes">좋아요 1,234개</div>
+        <div style="display:flex;justify-content:space-around;padding:10px 20px;background:#000;border-top:1px solid #222">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
       </div>
       <div class="phone-nav">
         <button class="pn-btn" onclick="navPhone(-Infinity)">&#171;</button>
@@ -418,6 +444,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <img class="fs-img" id="fsImg">
   <button class="fs-nav prev" onclick="navFS(-1)">&#8249;</button>
   <button class="fs-nav next" onclick="navFS(1)">&#8250;</button>
+  <div class="fs-zoom">
+    <button onclick="fsZoom(-10)" style="background:rgba(255,255,255,.1);border:none;color:#FFF;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px">-</button>
+    <span id="fsZoomLevel" style="min-width:50px;text-align:center">100%</span>
+    <button onclick="fsZoom(10)" style="background:rgba(255,255,255,.1);border:none;color:#FFF;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px">+</button>
+  </div>
 </div>
 
 <script>
@@ -533,12 +564,25 @@ async function startGenerate() {
     if (data.status === 'ok') {
       setTimeout(()=>{
         setPhoneSlides(data.png_urls, data.topic);
+        currentSessionName = data.session_name;
         goPage('edit');
-        // 간단 편집 데이터 구성
-        editSlides = data.png_urls.map((u,i) => ({
-          type: i===0?'커버':i===data.png_urls.length-1?'CTA':'본문',
-          png_url: u,
-        }));
+        const sd = data.slides_data || [];
+        editSlides = data.png_urls.map((u,i) => {
+          const s = sd[i] || {};
+          const st = s.slide_type || (i===0?'cover':i===data.png_urls.length-1?'last':'content');
+          return {
+            type: st==='cover'?'커버':st==='last'?'CTA':'본문',
+            slide_type: st,
+            category_tag: s.category_tag || '',
+            heading: s.heading || '',
+            body: s.body || '',
+            highlight: '',
+            caption: '',
+            image_prompt: s.image_prompt || '',
+            png_url: u,
+            theme: 'dark',
+          };
+        });
         editIdx = 0;
         renderEditor();
       }, 800);
@@ -564,37 +608,89 @@ function setStep(s1,c1,s2,c2) {
 }
 
 // ═══ 편집 ═══
+let currentSessionName = '';
+
 function renderEditor() {
   if (!editSlides.length) return;
   const s = editSlides[editIdx];
   document.getElementById('editSlideType').textContent = s.type;
   document.getElementById('editSlideNum').textContent = (editIdx+1) + ' / ' + editSlides.length;
-  // 폰 동기화
   if (phoneSlides.length) { phoneIdx = editIdx; document.getElementById('phImg').src = phoneSlides[phoneIdx]; updatePhoneNav(); }
-  // 에디터 카드
+
+  const isLight = s.theme === 'light';
   document.getElementById('editorCard').innerHTML = `
-    <div class="ed-field"><div class="ed-label">슬라이드 타입</div><div style="font-size:15px;color:var(--accent)">${s.type}</div></div>
+    <div class="ed-field"><div class="ed-label">카테고리</div>
+      <input class="ed-input" value="${s.category_tag||''}" onchange="editSlides[editIdx].category_tag=this.value" placeholder="예: AI & INSIGHT"></div>
+    <div class="ed-field"><div class="ed-label">제목</div>
+      <textarea class="ed-textarea" onchange="editSlides[editIdx].heading=this.value" placeholder="제목을 입력하세요" style="min-height:70px;font-size:17px;font-weight:700">${s.heading||''}</textarea></div>
+    <div class="ed-field"><div class="ed-label">부제</div>
+      <textarea class="ed-textarea" onchange="editSlides[editIdx].body=this.value" placeholder="본문/부제를 입력하세요">${s.body||''}</textarea></div>
+    <div class="ed-field"><div class="ed-label">하이라이트</div>
+      <input class="ed-input" value="${s.highlight||''}" onchange="editSlides[editIdx].highlight=this.value" placeholder="강조할 문구"></div>
+    <div class="ed-field"><div class="ed-label">캡션</div>
+      <input class="ed-input" value="${s.caption||''}" onchange="editSlides[editIdx].caption=this.value" placeholder="캡션을 입력하세요"></div>
+
     <div class="ed-field"><div class="ed-label">색상 프리셋</div>
       <div class="preset-row">
-        <span class="preset-chip" onclick="this.parentNode.querySelectorAll('.preset-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">☀ 밝은 배경</span>
-        <span class="preset-chip active" onclick="this.parentNode.querySelectorAll('.preset-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">🌙 어두운 배경</span>
+        <span class="preset-chip ${isLight?'active':''}" onclick="setTheme('light')">☀ 밝은 배경</span>
+        <span class="preset-chip ${!isLight?'active':''}" onclick="setTheme('dark')">🌙 어두운 배경</span>
       </div>
     </div>
+
     <div class="ed-field"><div class="ed-label">레이아웃</div>
       <div class="layout-grid">
-        ${[0,1,2,3,4,5,6,7,8].map(i=>'<div class="layout-dot'+(i===3?' active':'')+'" onclick="this.parentNode.querySelectorAll(\\'.layout-dot\\').forEach(d=>d.classList.remove(\\'active\\'));this.classList.add(\\'active\\')"></div>').join('')}
+        ${[0,1,2,3,4,5,6,7,8].map(i=>`<div class="layout-dot${i===4?' active':''}" onclick="this.parentNode.querySelectorAll('.layout-dot').forEach(d=>d.classList.remove('active'));this.classList.add('active')"></div>`).join('')}
       </div>
     </div>
+
     <div class="img-actions">
-      <button class="img-btn">&#128248; 첨부 이미지</button>
-      <button class="img-btn">&#10024; 자동 이미지</button>
-      <button class="img-btn">&#128269; 검색 이미지</button>
+      <button class="img-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> 첨부 이미지</button>
+      <button class="img-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.09 3.41L16.5 7.5l-3.41 1.09L12 12l-1.09-3.41L7.5 7.5l3.41-1.09z"/></svg> 자동 이미지</button>
+      <button class="img-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 검색 이미지</button>
     </div>
+
     <div class="bottom-actions">
-      <button class="ba-btn">&#10024; 슬라이드 개선</button>
-      <button class="ba-btn" style="color:var(--err)">&#128465; 슬라이드 삭제</button>
+      <button class="ba-btn" onclick="reRenderSlide()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.09 3.41L16.5 7.5l-3.41 1.09L12 12l-1.09-3.41L7.5 7.5l3.41-1.09z"/></svg> 슬라이드 개선</button>
+      <button class="ba-btn" style="color:var(--err)" onclick="deleteSlide()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> 슬라이드 삭제</button>
     </div>
   `;
+}
+
+function setTheme(t) {
+  editSlides[editIdx].theme = t;
+  renderEditor();
+}
+
+async function reRenderSlide() {
+  const s = editSlides[editIdx];
+  const btn = document.querySelector('.bottom-actions .ba-btn');
+  btn.textContent = '렌더링 중...';
+  try {
+    const res = await fetch('/api/re-render', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      slide: {slide_type:s.slide_type||'content',heading:s.heading,body:s.body,category_tag:s.category_tag},
+      slide_index: editIdx,
+      session_name: currentSessionName || 'edited',
+      total_slides: editSlides.length,
+      theme: s.theme || 'dark',
+    })});
+    const data = await res.json();
+    if (data.status === 'ok') {
+      phoneSlides[editIdx] = data.png_url;
+      editSlides[editIdx].png_url = data.png_url;
+      document.getElementById('phImg').src = data.png_url;
+    } else { alert(data.message); }
+  } catch(e) { alert('재렌더링 실패: '+e.message); }
+  renderEditor();
+}
+
+function deleteSlide() {
+  if (editSlides.length <= 1) return;
+  if (!confirm('이 슬라이드를 삭제할까요?')) return;
+  editSlides.splice(editIdx, 1);
+  phoneSlides.splice(editIdx, 1);
+  if (editIdx >= editSlides.length) editIdx = editSlides.length - 1;
+  renderEditor();
+  setPhoneSlides(phoneSlides, '');
 }
 function navEditSlide(d) {
   editIdx = Math.max(0, Math.min(editSlides.length-1, editIdx+d));
@@ -628,7 +724,7 @@ async function loadWorklist() {
     // 히스토리
     (history.history||[]).forEach(h => {
       const urls = h.png_urls||[];
-      if (urls.length) items.push({title:h.topic||h.session_name,date:(h.created_at||'').slice(0,16).replace('T',' '),thumb:urls[0],urls});
+      if (urls.length) items.push({title:h.topic||h.session_name,date:fmtDate(h.created_at),thumb:urls[0],urls});
     });
     grid.innerHTML = items.map((it,i) => `
       <div class="work-item" onclick='viewWork(${JSON.stringify(it.urls)}, "${it.title}")'>
@@ -660,7 +756,7 @@ async function loadHistory() {
         <div class="left">
           <div>
             <div class="t">${h.topic||h.session_name}</div>
-            <div class="d">${h.category||''} | ${h.slides_count}장 | ${(h.created_at||'').slice(0,16).replace('T',' ')}</div>
+            <div class="d">${h.category||''} | ${h.slides_count}장 | ${fmtDate(h.created_at)}</div>
           </div>
         </div>
         <span class="arrow">&#8250;</span>
@@ -750,7 +846,7 @@ async function loadUsers() {
     if (d.status!=='ok') return;
     document.getElementById('userList').innerHTML = d.users.map(u =>
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">' +
-      '<div><strong>'+u.username+'</strong> <span style="color:var(--dim)">('+u.role+')</span><br><span style="font-size:11px;color:var(--dim)">마지막: '+(u.last_login_at?(u.last_login_at+'').slice(0,16).replace('T',' '):'없음')+'</span></div>' +
+      '<div><strong>'+u.username+'</strong> <span style="color:var(--dim)">('+u.role+')</span><br><span style="font-size:11px;color:var(--dim)">마지막: '+(u.last_login_at?fmtDate(u.last_login_at):'없음')+'</span></div>' +
       (u.username!=='admin'?'<button onclick="delUser(\''+u.id+'\')" style="background:var(--err);color:#FFF;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">삭제</button>':'') +
       '</div>'
     ).join('');
@@ -767,12 +863,33 @@ async function loadLogs() {
     if (d.status!=='ok') return;
     document.getElementById('logList').innerHTML = d.logs.map(l =>
       '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">' +
-      '<span style="color:var(--dim);min-width:120px">'+(l.created_at||'').slice(0,16).replace('T',' ')+'</span>' +
+      '<span style="color:var(--dim);min-width:120px">'+fmtDate(l.created_at)+'</span>' +
       '<span style="color:'+(l.action==='login'?'var(--ok)':'var(--dim)')+'">'+l.action+'</span>' +
       '<span>'+(l.cn_users?.username||'?')+'</span></div>'
     ).join('') || '<p style="color:var(--dim)">기록 없음</p>';
   } catch(e) {}
 }
+
+// ═══ 줌 ═══
+let fsZoomVal = 100;
+function fsZoom(d) {
+  fsZoomVal = Math.max(50, Math.min(200, fsZoomVal + d));
+  document.getElementById('fsImg').style.transform = 'scale(' + (fsZoomVal/100) + ')';
+  document.getElementById('fsZoomLevel').textContent = fsZoomVal + '%';
+}
+
+// ═══ 피드/URL ═══
+function showFeedSelect() {
+  document.getElementById('inputText').value = '[RSS 피드에서 자동 수집]';
+  startGenerate();
+}
+function showUrlInput() {
+  const url = prompt('카드뉴스로 만들 URL을 입력하세요:');
+  if (url) { document.getElementById('inputText').value = 'URL: ' + url; startGenerate(); }
+}
+
+// ═══ 날짜 포맷 ═══
+function fmtDate(s) { return (s||'').slice(0,16).replace('T',' ').replaceAll('-','.'); }
 
 // ═══ 초기화 ═══
 checkAuth();
