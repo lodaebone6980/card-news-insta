@@ -13,10 +13,51 @@ OUTPUT_DIR = PROJECT_ROOT / "output"
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
+# Vertex AI 설정
+VERTEX_AI_ENABLED = os.environ.get("VERTEX_AI_ENABLED", "").lower() in ("true", "1", "yes")
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "")
+GCP_LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
+# 서비스 계정 키 JSON 경로 (Railway에서는 환경변수로 JSON 내용을 직접 넣을 수도 있음)
+GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
+
 # Gemini 모델명
 MODEL_FLASH = "gemini-2.5-flash-preview-05-20"
 MODEL_PRO = "gemini-2.5-pro-preview-05-06"
 MODEL_IMAGE = "gemini-2.0-flash-exp"  # 이미지 생성용 (변경될 수 있음)
+
+
+def get_genai_client():
+    """환경변수에 따라 Gemini API 또는 Vertex AI 클라이언트 반환"""
+    from google import genai
+
+    if VERTEX_AI_ENABLED and GCP_PROJECT_ID:
+        # Vertex AI: GCP 프로젝트 기반 인증
+        # GOOGLE_APPLICATION_CREDENTIALS 환경변수가 설정되어 있으면 자동 인식
+        # 또는 GCP_SA_KEY_JSON 환경변수에 JSON 내용을 직접 넣은 경우 처리
+        sa_key_json = os.environ.get("GCP_SA_KEY_JSON", "")
+        if sa_key_json:
+            import json
+            import tempfile
+            # JSON 문자열을 임시 파일로 저장하여 ADC로 사용
+            key_data = json.loads(sa_key_json)
+            tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+            json.dump(key_data, tmp)
+            tmp.close()
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+
+        client = genai.Client(
+            vertexai=True,
+            project=GCP_PROJECT_ID,
+            location=GCP_LOCATION,
+        )
+        return client
+    else:
+        # Gemini API: API Key 기반
+        if not GEMINI_API_KEY:
+            raise ValueError(
+                "GEMINI_API_KEY 또는 VERTEX_AI_ENABLED + GCP_PROJECT_ID를 설정하세요."
+            )
+        return genai.Client(api_key=GEMINI_API_KEY)
 
 
 def parse_brand() -> dict:

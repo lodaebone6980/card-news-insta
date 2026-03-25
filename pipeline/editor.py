@@ -2,9 +2,7 @@
 
 import json
 
-from google import genai
-
-from .config import GEMINI_API_KEY, MODEL_FLASH, load_prompt, parse_brand
+from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand
 
 
 def create_plan(topic: dict) -> dict:
@@ -27,7 +25,7 @@ def create_plan(topic: dict) -> dict:
 
     print("[Editor] Gemini Flash로 기획안 작성 중...")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = get_genai_client()
     response = client.models.generate_content(
         model=MODEL_FLASH,
         contents=[

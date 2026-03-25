@@ -77,8 +77,13 @@ async def save_brand(request: Request):
 @app.post("/api/generate", response_class=JSONResponse)
 async def generate():
     """카드뉴스 생성 파이프라인 실행"""
-    if not os.environ.get("GEMINI_API_KEY"):
-        return {"status": "error", "message": "GEMINI_API_KEY 환경변수가 설정되지 않았습니다."}
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
+    has_vertex = (
+        os.environ.get("VERTEX_AI_ENABLED", "").lower() in ("true", "1", "yes")
+        and bool(os.environ.get("GCP_PROJECT_ID"))
+    )
+    if not has_gemini and not has_vertex:
+        return {"status": "error", "message": "GEMINI_API_KEY 또는 VERTEX_AI_ENABLED + GCP_PROJECT_ID를 설정하세요."}
 
     try:
         session_name = datetime.now().strftime("%Y%m%d_%H%M%S")

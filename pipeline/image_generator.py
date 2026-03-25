@@ -4,9 +4,7 @@ import base64
 import time
 from pathlib import Path
 
-from google import genai
-
-from .config import GEMINI_API_KEY, MODEL_IMAGE, OUTPUT_DIR
+from .config import MODEL_IMAGE, OUTPUT_DIR, get_genai_client
 
 IMAGE_SUFFIX = """
 Shot with 85mm lens, f/2.0, ISO 200, shallow depth of field.
@@ -21,7 +19,7 @@ def generate_images(writer_output: dict, session_name: str) -> list[str]:
     image_dir = OUTPUT_DIR / session_name / "images"
     image_dir.mkdir(parents=True, exist_ok=True)
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = get_genai_client()
     image_paths = []
 
     for i, slide in enumerate(slides):

@@ -2,9 +2,7 @@
 
 import json
 
-from google import genai
-
-from .config import GEMINI_API_KEY, MODEL_FLASH, load_prompt, parse_brand
+from .config import MODEL_FLASH, get_genai_client, load_prompt, parse_brand
 
 
 def select_topic(headlines: list[dict]) -> dict:
@@ -32,7 +30,7 @@ def select_topic(headlines: list[dict]) -> dict:
 
     print("[Topic Selector] Gemini Flash로 주제 선정 중...")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = get_genai_client()
     response = client.models.generate_content(
         model=MODEL_FLASH,
         contents=[

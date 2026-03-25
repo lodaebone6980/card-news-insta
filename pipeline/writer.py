@@ -2,9 +2,7 @@
 
 import json
 
-from google import genai
-
-from .config import GEMINI_API_KEY, MODEL_PRO, load_prompt, parse_brand
+from .config import MODEL_PRO, get_genai_client, load_prompt, parse_brand
 
 
 def write(plan: dict, research_data: dict) -> dict:
@@ -40,7 +38,7 @@ def write(plan: dict, research_data: dict) -> dict:
 
     print("[Writer] Gemini Pro로 최종 텍스트 작성 중...")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = get_genai_client()
     response = client.models.generate_content(
         model=MODEL_PRO,
         contents=[

@@ -2,9 +2,7 @@
 
 import json
 
-from google import genai
-
-from .config import GEMINI_API_KEY, MODEL_PRO, load_prompt
+from .config import MODEL_PRO, get_genai_client, load_prompt
 
 
 def research(plan: dict) -> dict:
@@ -33,7 +31,7 @@ Google Search를 사용해서 최신 정보를 찾아주세요."""
 
     print("[Researcher] Gemini Pro + Google Search로 리서치 중...")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = get_genai_client()
     response = client.models.generate_content(
         model=MODEL_PRO,
         contents=[
