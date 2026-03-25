@@ -3,122 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    width: 1080px;
-    height: 1350px;
-    overflow: hidden;
-    font-family: 'Noto Sans KR', sans-serif;
-  }
-
-  .slide {
-    width: 1080px;
-    height: 1350px;
-    position: relative;
-    background: {{ sub_color }};
-  }
-
-  .background-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 55%;
-    object-fit: cover;
-    z-index: 0;
-  }
-
-  .image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 55%;
-    background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.05) 0%,
-      {{ sub_color }} 100%
-    );
-    z-index: 1;
-  }
-
-  .content {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 80px;
-    z-index: 2;
-  }
-
-  .category-tag {
-    display: inline-block;
-    font-size: 22px;
-    font-weight: 700;
-    color: {{ main_color }};
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 3px solid {{ main_color }};
-  }
-
-  .heading {
-    font-size: 48px;
-    font-weight: 900;
-    color: #1A1A1A;
-    line-height: 1.35;
-    margin-bottom: 28px;
-    word-break: keep-all;
-  }
-
-  .body {
-    font-size: 30px;
-    font-weight: 400;
-    color: #4A4A4A;
-    line-height: 1.7;
-    word-break: keep-all;
-  }
-
-  .accent-bar {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 6px;
-    background: {{ main_color }};
-    z-index: 3;
-  }
-
-  .brand-footer {
-    position: absolute; bottom: 40px; left: 80px;
-    font-size: 16px; color: #999;
-    z-index: 3;
-  }
-
-  .slide-number {
-    position: absolute;
-    top: 60px;
-    right: 80px;
-    font-size: 20px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.6);
-    z-index: 2;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1350px; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; }
+.slide {
+  width: 1080px; height: 1350px;
+  background: {{ sub_color }};
+  padding: 90px 80px;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  position: relative; overflow: hidden;
+}
+.top-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 8px;
+  background: {{ main_color }};
+}
+.deco {
+  position: absolute; right: -100px; bottom: -100px;
+  width: 500px; height: 500px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.deco2 {
+  position: absolute; right: -200px; bottom: -200px;
+  width: 750px; height: 750px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.025);
+}
+.step-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-bottom: 40px;
+}
+.step-num {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: {{ main_color }};
+  color: #fff; font-size: 22px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-label {
+  font-size: 24px; font-weight: 700;
+  color: {{ main_color }};
+  letter-spacing: 1px;
+}
+.heading {
+  font-size: 68px; font-weight: 900;
+  color: #ffffff; line-height: 1.2;
+  margin-bottom: 32px;
+  letter-spacing: -1.5px;
+  word-break: keep-all;
+}
+.divider {
+  width: 50px; height: 4px;
+  background: {{ main_color }};
+  border-radius: 2px; margin-bottom: 36px;
+}
+.body {
+  font-size: 34px; font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.75;
+  word-break: keep-all;
+}
+.body strong { color: #fff; font-weight: 700; }
+.footer {
+  position: absolute; bottom: 48px; left: 80px; right: 80px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 22px; color: rgba(255,255,255,0.2);
+}
 </style>
 </head>
 <body>
-  <div class="slide">
-    <div class="accent-bar"></div>
-    <img class="background-image" src="{{ image_path }}" alt="content background">
-    <div class="image-overlay"></div>
-    <span class="slide-number">{{ slide_number }} / {{ total_slides }}</span>
-    <span class="brand-footer">{{ brand_name }}</span>
-    <div class="content">
-      <span class="category-tag">{{ category_tag }}</span>
-      <h2 class="heading">{{ heading }}</h2>
-      <p class="body">{{ body }}</p>
-    </div>
+<div class="slide">
+  <div class="top-bar"></div>
+  <div class="deco"></div>
+  <div class="deco2"></div>
+  <div class="step-badge">
+    <div class="step-num">{{ slide_number }}</div>
+    <div class="step-label">{{ category_tag }}</div>
   </div>
+  <h2 class="heading">{{ heading }}</h2>
+  <div class="divider"></div>
+  <p class="body">{{ body }}</p>
+  <div class="footer">
+    <span>{{ brand_name }}</span>
+    <span>{{ slide_number }} / {{ total_slides }}</span>
+  </div>
+</div>
 </body>
 </html>
