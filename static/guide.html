@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>카드뉴스 자동화 실전 가이드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--accent:#00e5b0;--accent2:#FF6B35;--text:#ffffff;--dim:rgba(255,255,255,0.5);--dim2:rgba(255,255,255,0.28)}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:52px}
+.nav-logo{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:1px}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:5px 12px;border-radius:6px;font-size:12px;color:var(--dim);cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,0.06)}
+.nav-btn{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:700;background:var(--accent);color:#000;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 2rem 4rem;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(0,229,176,0.08) 0%,transparent 60%);pointer-events:none}
+.hero-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:2px;padding:4px 12px;border-radius:20px;background:rgba(0,229,176,0.1);border:1px solid rgba(0,229,176,0.2);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(36px,6vw,72px);font-weight:900;line-height:1.15;margin-bottom:1rem;letter-spacing:-2px;word-break:keep-all}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero p{font-size:18px;color:var(--dim);max-width:520px;line-height:1.8;margin-bottom:2.5rem}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:14px 28px;border-radius:10px;font-size:14px;font-weight:700;background:var(--accent);color:#000;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{padding:14px 28px;border-radius:10px;font-size:14px;font-weight:500;background:transparent;color:var(--text);border:1px solid var(--border);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.3)}
+.hero-stats{display:flex;gap:3rem;margin-top:4rem;padding-top:3rem;border-top:1px solid var(--border)}
+.hero-stat{text-align:center}
+.hero-stat-num{font-size:28px;font-weight:900;color:var(--accent);font-family:'Space Mono',monospace}
+.hero-stat-label{font-size:12px;color:var(--dim);margin-top:4px}
+section{padding:5rem 2rem;max-width:900px;margin:0 auto}
+.section-tag{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:.5rem}
+.section-title{font-size:32px;font-weight:900;line-height:1.25;margin-bottom:.75rem;word-break:keep-all}
+.section-desc{font-size:15px;color:var(--dim);line-height:1.8;margin-bottom:2.5rem;max-width:600px}
+.checklist-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:flex-start;gap:12px;transition:border-color .2s}
+.check-card:hover{border-color:rgba(0,229,176,0.3)}
+.check-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(0,229,176,0.1)}
+.check-content h4{font-size:14px;font-weight:700;margin-bottom:4px}
+.check-content p{font-size:12px;color:var(--dim);line-height:1.6}
+.check-content a{color:var(--accent);text-decoration:none}
+.check-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:6px;font-family:'Space Mono',monospace;letter-spacing:.5px}
+.badge-free{background:rgba(0,229,176,0.15);color:var(--accent)}
+.badge-req{background:rgba(255,107,53,0.15);color:var(--accent2)}
+.flow-steps{display:flex;flex-direction:column;gap:0}
+.flow-step{display:grid;grid-template-columns:60px 1fr;gap:0;position:relative}
+.flow-step:not(:last-child)::after{content:'';position:absolute;left:29px;top:52px;width:2px;height:calc(100% - 20px);background:linear-gradient(var(--accent),var(--border))}
+.flow-left{display:flex;flex-direction:column;align-items:center;padding-top:4px}
+.flow-num{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#000;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;flex-shrink:0;position:relative;z-index:1}
+.flow-body{padding:0 0 3rem 1.5rem}
+.flow-body h3{font-size:18px;font-weight:700;margin-bottom:.4rem;margin-top:.1rem}
+.flow-body p{font-size:13px;color:var(--dim);line-height:1.8;margin-bottom:1rem}
+.code-block{background:#0d1117;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px 16px;font-family:'Space Mono',monospace;font-size:12px;line-height:1.8;color:rgba(255,255,255,0.75);overflow-x:auto;white-space:pre;margin:10px 0}
+.code-block .key{color:var(--accent)}.code-block .val{color:#79c0ff}.code-block .cmt{color:rgba(255,255,255,0.28)}.code-block .hl{color:var(--accent2)}
+.tip-box{background:rgba(0,229,176,0.05);border:1px solid rgba(0,229,176,0.2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin-top:12px}
+.tip-box .tip-label{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:5px;font-family:'Space Mono',monospace}
+.tip-box p{font-size:12px;color:var(--dim);margin:0}
+.slide-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:1.5rem}
+.slide-type-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .2s,transform .15s}
+.slide-type-card:hover{border-color:rgba(0,229,176,0.35);transform:translateY(-2px)}
+.st-icon{font-size:22px;margin-bottom:8px}
+.st-name{font-size:13px;font-weight:700;margin-bottom:4px;font-family:'Space Mono',monospace;color:var(--accent)}
+.st-desc{font-size:11px;color:var(--dim);line-height:1.6}
+.st-when{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:8px;background:rgba(0,229,176,0.08);color:var(--accent);font-family:'Space Mono',monospace}
+.faq-list{display:flex;flex-direction:column;gap:10px}
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.faq-q{padding:16px 20px;font-size:14px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.faq-q:hover{background:var(--surface2)}
+.faq-q::after{content:'▾';color:var(--dim);font-size:12px}
+.faq-a{padding:12px 20px 16px;font-size:13px;color:var(--dim);line-height:1.8;border-top:1px solid var(--border)}
+.faq-a a{color:var(--accent)}
+.compare-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:1.5rem}
+.compare-table th{padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);color:var(--dim);font-weight:700;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px}
+.compare-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+.compare-table tr:hover td{background:rgba(255,255,255,0.02)}
+.td-hl{color:var(--accent);font-weight:700}
+.input-methods{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1.5rem}
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.input-card.featured{border-color:rgba(0,229,176,0.3);background:rgba(0,229,176,0.04)}
+.input-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.input-card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(255,255,255,0.06)}
+.input-card.featured .input-card-icon{background:rgba(0,229,176,0.15)}
+.input-card h4{font-size:14px;font-weight:700}
+.input-card p{font-size:12px;color:var(--dim);line-height:1.7}
+.input-card .use-when{font-size:11px;color:var(--accent);font-weight:500;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.cta-section{text-align:center;padding:5rem 2rem;max-width:600px;margin:0 auto}
+.cta-section h2{font-size:32px;font-weight:900;margin-bottom:1rem}
+.cta-section p{color:var(--dim);margin-bottom:2rem;font-size:15px}
+@media(max-width:640px){.checklist-grid,.input-methods{grid-template-columns:1fr}.hero-stats{gap:2rem}.slide-types{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">CARDNEWS GUIDE</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="scroll2('start')">시작하기</button>
+    <button class="nav-link" onclick="scroll2('flow')">사용 흐름</button>
+    <button class="nav-link" onclick="scroll2('types')">슬라이드 타입</button>
+    <button class="nav-link" onclick="scroll2('faq')">FAQ</button>
+  </div>
+  <button class="nav-btn" onclick="window.location.href='/'">앱 열기 →</button>
+</nav>
+
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-tag">PRACTICAL GUIDE · 2026</div>
+  <h1>인스타 카드뉴스<br><em>자동화</em> 실전 가이드</h1>
+  <p>브랜드 설정부터 카드뉴스 생성, 다운로드까지<br>처음 써보는 사람도 10분 안에 완성하는 법</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="scroll2('start')">지금 시작하기 →</button>
+    <button class="btn-ghost" onclick="scroll2('flow')">사용 흐름 보기</button>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-num">3단계</div><div class="hero-stat-label">설정 → 생성 → 다운로드</div></div>
+    <div class="hero-stat"><div class="hero-stat-num">8종</div><div class="hero-stat-label">슬라이드 레이아웃</div></div>
+    <div class="hero-stat"><div class="hero-stat-num">10분</div><div class="hero-stat-label">첫 카드뉴스 완성</div></div>
+  </div>
+</div>
+
+<section id="start">
+  <div class="section-tag">BEFORE YOU START</div>
+  <h2 class="section-title">시작 전에 이것만 준비해요</h2>
+  <p class="section-desc">총 2가지. 둘 다 무료로 시작 가능합니다.</p>
+  <div class="checklist-grid">
+    <div class="check-card">
+      <div class="check-icon">🔑</div>
+      <div class="check-content">
+        <h4>Gemini API Key</h4>
+        <p>카드뉴스 내용을 AI가 생성하는 데 사용. 구글 AI Studio에서 무료 발급.</p>
+        <a href="https://aistudio.google.com" target="_blank">aistudio.google.com →</a>
+        <div><span class="check-badge badge-free">무료</span></div>
+      </div>
+    </div>
+    <div class="check-card">
+      <div class="check-icon">⚙️</div>
+      <div class="check-content">
+        <h4>브랜드 설정</h4>
+        <p>앱 안에서 바로 설정 가능. 브랜드명, 컬러, 톤앤매너, CTA 문구 입력.</p>
+        <span class="check-badge badge-req">필수</span>
+      </div>
+    </div>
+  </div>
+  <div class="tip-box" style="margin-top:16px">
+    <div class="tip-label">TIP</div>
+    <p>서브 컬러는 <code style="background:#111;padding:1px 6px;border-radius:3px;color:var(--accent)">#0a0a0a</code>로 설정하면 다크 테마가 적용됩니다.</p>
+  </div>
+</section>
+
+<section>
+  <div class="section-tag">STEP 0</div>
+  <h2 class="section-title">브랜드 설정 — 한 번만 해두면 끝</h2>
+  <p class="section-desc">앱 좌측 하단 "브랜드 설정" → 아래 항목 채우기 → 저장</p>
+  <div class="code-block"><span class="key">브랜드명:</span>    <span class="val">내 계정명 (예: @devdesign.kr)</span>
+<span class="key">인스타핸들:</span>  <span class="val">devdesign.kr</span>
+<span class="key">메인 컬러:</span>   <span class="val">#FF6B35</span>  <span class="cmt">← 포인트 컬러 (오렌지 추천)</span>
+<span class="key">서브 컬러:</span>   <span class="val">#0a0a0a</span>  <span class="cmt">← 배경 컬러 (다크 테마 필수)</span>
+<span class="key">타겟 독자:</span>   <span class="val">AI·자동화에 관심 있는 2030대</span>
+<span class="key">톤앤매너:</span>   <span class="val">구어체, 단호하게, 어려운 말 X</span>
+<span class="key">CTA 문구:</span>   <span class="val">팔로우하면 계속 옵니다 →</span></div>
+  <div class="tip-box">
+    <div class="tip-label">왜 중요한가</div>
+    <p>브랜드 설정이 없으면 AI가 매번 다른 스타일로 생성해요. 한 번 설정해두면 모든 카드뉴스가 동일한 톤&amp;컬러로 나옵니다.</p>
+  </div>
+</section>
+
+<section>
+  <div class="section-tag">STEP 1</div>
+  <h2 class="section-title">어떻게 콘텐츠를 넣을까</h2>
+  <p class="section-desc">4가지 방법 중 상황에 맞게 선택하세요.</p>
+  <div class="input-methods">
+    <div class="input-card featured">
+      <div class="input-card-head"><div class="input-card-icon">🌐</div><h4>오늘의 뉴스 가져오기</h4></div>
+      <p>RSS에서 오늘 가장 핫한 뉴스를 AI가 자동으로 선정해서 카드뉴스로 만들어줌.</p>
+      <div class="use-when">✓ 매일 꾸준히 올릴 때 — 클릭 한 번으로 끝</div>
+    </div>
+    <div class="input-card">
+      <div class="input-card-head"><div class="input-card-icon">📋</div><h4>텍스트 붙여넣기</h4></div>
+      <p>블로그 글, 보고서, 아이디어 메모 등 어떤 텍스트든 붙여넣으면 카드뉴스로 변환.</p>
+      <div class="use-when">✓ 내가 쓴 글을 카드뉴스로 만들 때</div>
+    </div>
+    <div class="input-card">
+      <div class="input-card-head"><div class="input-card-icon">🔗</div><h4>URL 가져오기</h4></div>
+      <p>특정 기사나 웹페이지 URL을 입력하면 그 내용을 자동으로 추출해서 카드뉴스로.</p>
+      <div class="use-when">✓ 특정 기사를 카드뉴스로 만들 때</div>
+    </div>
+    <div class="input-card">
+      <div class="input-card-head"><div class="input-card-icon">📡</div><h4>피드에서 선택</h4></div>
+      <p>구독 중인 RSS 피드에서 여러 기사를 보고 직접 골라서 카드뉴스 제작.</p>
+      <div class="use-when">✓ 주제를 직접 고르고 싶을 때</div>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <div class="section-tag">STEP 2</div>
+  <h2 class="section-title">카드뉴스 만드는 전체 흐름</h2>
+  <p class="section-desc">처음부터 끝까지 이 순서로 하면 됩니다.</p>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-num">1</div></div>
+      <div class="flow-body">
+        <h3>브랜드 설정 (최초 1회)</h3>
+        <p>앱 좌측 하단 ⚙️ → 브랜드 설정. 브랜드명, 메인 컬러(#FF6B35), 서브 컬러(#0a0a0a), 타겟 독자, 톤앤매너, CTA 입력 후 저장.</p>
+        <div class="tip-box"><div class="tip-label">EXAMPLE</div><p>메인 컬러: #FF6B35 (오렌지) · 서브 컬러: #0a0a0a (다크) · CTA: 팔로우하면 계속 옵니다 →</p></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-num">2</div></div>
+      <div class="flow-body">
+        <h3>콘텐츠 선택</h3>
+        <p>4가지 방법 중 하나를 선택합니다. 가장 빠른 건 "오늘의 뉴스 가져오기" — 클릭 한 번으로 오늘 날짜 뉴스를 자동 수집.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-num">3</div></div>
+      <div class="flow-body">
+        <h3>"카드뉴스 만들기" 클릭</h3>
+        <p>AI가 자동으로 주제 선정 → 기획 → 리서치 → 글쓰기 → 이미지 생성 → 슬라이드 렌더링까지. 약 1~3분 소요.</p>
+        <div class="code-block"><span class="cmt">내부에서 일어나는 일:</span>
+<span class="key">1.</span> RSS 크롤링 → 오늘 헤드라인 수집
+<span class="key">2.</span> Gemini가 주제 1개 선정
+<span class="key">3.</span> 5~7장 기획안 작성
+<span class="key">4.</span> 팩트/통계 리서치
+<span class="key">5.</span> 최종 카피 작성 (브랜드 톤 반영)
+<span class="key">6.</span> 슬라이드별 이미지 생성
+<span class="key">7.</span> 1080×1350 PNG 렌더링</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-num">4</div></div>
+      <div class="flow-body">
+        <h3>오른쪽 프리뷰에서 확인 &amp; 수정</h3>
+        <p>폰 프리뷰에서 슬라이드를 좌우로 넘기며 확인. 마음에 안 드는 슬라이드는 텍스트를 직접 수정하고 재렌더링 가능.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-num">5</div></div>
+      <div class="flow-body">
+        <h3>다운로드 → 인스타 업로드</h3>
+        <p>PNG 파일로 다운로드 후 인스타그램에 슬라이드 형식으로 업로드. 완료!</p>
+        <div class="tip-box"><div class="tip-label">TIP</div><p>인스타그램 업로드 시 첫 장이 커버로 보이니 cover.html 디자인이 가장 중요합니다.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="types">
+  <div class="section-tag">SLIDE TYPES</div>
+  <h2 class="section-title">슬라이드 8종 — 어떤 내용에 어떤 레이아웃</h2>
+  <p class="section-desc">AI가 내용에 따라 자동으로 골라줍니다.</p>
+  <div class="slide-types">
+    <div class="slide-type-card"><div class="st-icon">🎯</div><div class="st-name">cover</div><div class="st-desc">배경 이미지 + 큰 제목. 항상 첫 번째 슬라이드.</div><div class="st-when">항상 1번째 장</div></div>
+    <div class="slide-type-card"><div class="st-icon">🏆</div><div class="st-name">content-list</div><div class="st-desc">랭킹 TOP5, 순위 리스트. 1위 강조 스타일.</div><div class="st-when">랭킹 · TOP5 · 순위</div></div>
+    <div class="slide-type-card"><div class="st-icon">📊</div><div class="st-name">content-grid</div><div class="st-desc">2×2 그리드 카드. 4가지 항목을 시각적으로 정리.</div><div class="st-when">4개 특징 · 항목 비교</div></div>
+    <div class="slide-type-card"><div class="st-icon">💯</div><div class="st-name">content-stat</div><div class="st-desc">숫자 하나를 크게 강조. 통계, 데이터 포인트.</div><div class="st-when">통계 · 데이터 강조</div></div>
+    <div class="slide-type-card"><div class="st-icon">💬</div><div class="st-name">content-quote</div><div class="st-desc">인용문, 명언, 핵심 문장을 크게 보여줌.</div><div class="st-when">명언 · 인터뷰 · 핵심문장</div></div>
+    <div class="slide-type-card"><div class="st-icon">⚖️</div><div class="st-name">content-split</div><div class="st-desc">좌우 분할로 두 가지를 비교. Before/After.</div><div class="st-when">비교 · Before/After</div></div>
+    <div class="slide-type-card"><div class="st-icon">📝</div><div class="st-name">content</div><div class="st-desc">일반 본문 텍스트. 설명이 많을 때.</div><div class="st-when">일반 본문 · 설명</div></div>
+    <div class="slide-type-card"><div class="st-icon">💾</div><div class="st-name">last</div><div class="st-desc">저장/팔로우 CTA. 항상 마지막 슬라이드.</div><div class="st-when">항상 마지막 장</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-tag">COMPARISON</div>
+  <h2 class="section-title">입력 방법별 비교</h2>
+  <p class="section-desc">내 상황에 맞는 방법을 고르세요.</p>
+  <table class="compare-table">
+    <thead><tr><th>방법</th><th>속도</th><th>어떤 경우</th><th>결과물</th></tr></thead>
+    <tbody>
+      <tr><td class="td-hl">오늘의 뉴스</td><td>⚡ 가장 빠름</td><td>매일 자동 생성이 목표</td><td>최신 뉴스 기반</td></tr>
+      <tr><td class="td-hl">텍스트 붙여넣기</td><td>🔵 빠름</td><td>내 글/보고서 → 카드뉴스</td><td>내 콘텐츠 기반</td></tr>
+      <tr><td class="td-hl">URL 가져오기</td><td>🔵 빠름</td><td>특정 기사 카드뉴스화</td><td>해당 기사 기반</td></tr>
+      <tr><td class="td-hl">피드에서 선택</td><td>🟡 보통</td><td>주제를 직접 큐레이션</td><td>선택한 기사 기반</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="faq">
+  <div class="section-tag">FAQ</div>
+  <h2 class="section-title">자주 묻는 질문</h2>
+  <p class="section-desc">막히는 부분이 있으면 여기서 먼저 확인하세요.</p>
+  <div class="faq-list">
+    <div class="faq-item"><div class="faq-q">카드뉴스가 생성이 안 되고 에러가 나요</div><div class="faq-a">GEMINI_API_KEY가 설정되어 있는지 확인하세요. Railway 대시보드 → Variables에서 <code style="background:#111;padding:1px 5px;border-radius:3px">GEMINI_API_KEY</code> 환경변수가 있어야 합니다.</div></div>
+    <div class="faq-item"><div class="faq-q">배경이 흰색으로 나와요 (다크 테마가 안 돼요)</div><div class="faq-a">브랜드 설정에서 <strong>서브 컬러</strong>를 <code style="background:#111;padding:1px 5px;border-radius:3px">#0a0a0a</code>로 바꿔주세요. 기본값 #F5F3FF는 흰색입니다.</div></div>
+    <div class="faq-item"><div class="faq-q">슬라이드 레이아웃을 내 스타일로 바꾸고 싶어요</div><div class="faq-a">GitHub의 <code style="background:#111;padding:1px 5px;border-radius:3px">templates/</code> 폴더 안에 있는 HTML 파일 8개를 수정하면 됩니다.</div></div>
+    <div class="faq-item"><div class="faq-q">뉴스 소스를 내 분야로 바꾸고 싶어요</div><div class="faq-a">GitHub의 <code style="background:#111;padding:1px 5px;border-radius:3px">news_sources.txt</code> 파일에 RSS URL을 추가/수정하면 됩니다.</div></div>
+    <div class="faq-item"><div class="faq-q">인스타그램에 자동 업로드도 가능한가요?</div><div class="faq-a">현재는 수동 업로드만 지원합니다. n8n이나 Make를 연결하면 자동화 가능합니다.</div></div>
+  </div>
+</section>
+
+<div class="cta-section">
+  <h2>지금 바로 시작해보세요</h2>
+  <p>브랜드 설정 → 뉴스 가져오기 → 카드뉴스 만들기.<br>10분이면 첫 번째 카드뉴스가 완성됩니다.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="window.location.href='/'">앱에서 만들기 →</button>
+  </div>
+</div>
+<script>function scroll2(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'})}</script>
+</body>
+</html>
