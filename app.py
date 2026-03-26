@@ -43,6 +43,11 @@ async def index():
     html_path = PROJECT_ROOT / "static" / "index.html"
     return HTMLResponse(html_path.read_text(encoding="utf-8"))
 
+@app.get("/guide", response_class=HTMLResponse)
+async def guide():
+    html_path = PROJECT_ROOT / "static" / "guide.html"
+    return HTMLResponse(html_path.read_text(encoding="utf-8"))
+
 
 # ─── 인증 API ───
 
